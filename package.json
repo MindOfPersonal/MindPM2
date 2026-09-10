@@ -1,0 +1,51 @@
+{
+  "name": "mindpm2",
+  "version": "1.0.0",
+  "description": "A powerful interactive PM2 management CLI for Node.js servers.",
+  "type": "module",
+  "bin": {
+    "mindpm2": "./src/index.js"
+  },
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./pm2": "./src/pm2/manager.js",
+    "./system": "./src/system/info.js"
+  },
+  "files": [
+    "src",
+    "assets",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test \"tests/**/*.test.js\"",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:integration": "node --test \"tests/integration/*.test.js\"",
+    "test:cli": "node --test \"tests/cli/*.test.js\"",
+    "doctor": "node src/index.js doctor"
+  },
+  "keywords": [
+    "pm2",
+    "cli",
+    "process-manager",
+    "monitoring",
+    "terminal",
+    "devops",
+    "minddevelopment"
+  ],
+  "author": "MindDevelopment",
+  "license": "MIT",
+  "dependencies": {
+    "@inquirer/prompts": "^7.0.0",
+    "boxen": "^8.0.0",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "figlet": "^1.8.0",
+    "ora": "^8.1.0"
+  }
+}
