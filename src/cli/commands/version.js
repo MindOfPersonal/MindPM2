@@ -7,6 +7,7 @@ import { platformLabel } from '../../utils/platform.js';
 import { theme } from '../../ui/colors.js';
 import { panel } from '../../ui/boxes.js';
 import { keyValue } from '../../ui/tables.js';
+import { t } from '../../i18n/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../../package.json'), 'utf8'));
@@ -31,12 +32,12 @@ export async function runVersion(options = {}) {
 
   process.stdout.write(
     `${panel(
-      'MindPM2',
+      t('version.title'),
       keyValue([
-        ['MindPM2', `v${data.mindpm2}`],
-        ['Node.js', data.node],
-        ['PM2', data.pm2 ? `v${data.pm2}` : theme.warning('not installed')],
-        ['Platform', data.platform],
+        [t('version.title'), `v${data.mindpm2}`],
+        [t('info.node'), data.node],
+        [t('info.pm2'), data.pm2 ? `v${data.pm2}` : theme.warning(t('info.notInstalled'))],
+        [t('startup.platform'), data.platform],
       ])
     )}\n`
   );

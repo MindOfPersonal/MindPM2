@@ -4,6 +4,7 @@ import { withSpinner } from '../../ui/spinner.js';
 import { printSuccess } from '../output.js';
 import { confirmDangerous } from './helpers.js';
 import { theme } from '../../ui/colors.js';
+import { t } from '../../i18n/index.js';
 
 export async function runSave(options = {}) {
   const processes = await listProcesses();
@@ -12,22 +13,19 @@ export async function runSave(options = {}) {
 
   if (options.json) {
     await save();
-    printSuccess(`PM2 process list opgeslagen (${processes.length} processen).`);
+    printSuccess(t('save.savedCount', { count: processes.length }));
     return { saved: processes.length };
   }
 
-  process.stdout.write(`${theme.muted('Huidige processen:')}\n`);
-  process.stdout.write(`  ${online} online\n`);
-  if (other > 0) process.stdout.write(`  ${other} gestopt/errored\n`);
+  process.stdout.write(`${theme.muted(t('save.current'))}\n`);
+  process.stdout.write(`  ${t('save.online', { count: online })}\n`);
+  if (other > 0) process.stdout.write(`  ${t('save.other', { count: other })}\n`);
 
-  const ok = await confirmDangerous('Huidige PM2-processlijst opslaan?', {
-    ...options,
-    default: true,
-  });
+  const ok = await confirmDangerous(t('save.confirm'), { ...options, default: true });
   if (!ok) return { cancelled: true };
 
-  await withSpinner('PM2 processlijst opslaan...', () => save(), {
-    successText: 'PM2 processlijst opgeslagen.',
+  await withSpinner(t('save.saving'), () => save(), {
+    successText: t('save.saved'),
   });
   return { saved: processes.length };
 }

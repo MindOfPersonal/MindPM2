@@ -9,6 +9,7 @@ import {
 import { printJson, printSuccess, printInfo } from '../output.js';
 import { theme } from '../../ui/colors.js';
 import { confirmDangerous } from './helpers.js';
+import { t } from '../../i18n/index.js';
 
 function renderLines(lines, color) {
   return lines.map((line) => color(line)).join('\n');
@@ -22,7 +23,7 @@ export async function runLogs(target, options = {}) {
       return files;
     }
     if (files.length === 0) {
-      printInfo('Geen logbestanden gevonden.');
+      printInfo(t('logs.none'));
     } else {
       process.stdout.write(`${files.map((file) => theme.muted(file)).join('\n')}\n`);
     }
@@ -30,29 +31,29 @@ export async function runLogs(target, options = {}) {
   }
 
   if (options.clear) {
-    const ok = await confirmDangerous(
-      target ? `Logs van "${target}" wissen?` : 'Alle PM2-logs wissen?',
-      options
-    );
+    const message = target
+      ? t('logs.confirmClear', { name: target })
+      : t('logs.confirmClearAll');
+    const ok = await confirmDangerous(message, options);
     if (!ok) return { cancelled: true };
     if (target) {
       await flushLogs(target);
-      printSuccess(`Logs van "${target}" gewist.`);
+      printSuccess(t('logs.cleared', { name: target }));
     } else {
       await flushLogs();
-      printSuccess('Alle PM2-logs gewist.');
+      printSuccess(t('logs.clearedAll'));
     }
     return { cleared: true };
   }
 
   if (options.reload) {
     await reloadLogs();
-    printSuccess('PM2-logs herladen.');
+    printSuccess(t('logs.reloaded'));
     return { reloaded: true };
   }
 
   if (options.live) {
-    printInfo('Live logs gestart. Druk op CTRL+C of Q om te stoppen.');
+    printInfo(t('logs.liveStarted'));
     await streamLogsToConsole(target, {
       lines: options.lines ?? 15,
       errOnly: options.err,
@@ -69,15 +70,15 @@ export async function runLogs(target, options = {}) {
       printJson({ process: proc.name, out, err });
       return { process: proc.name, out, err };
     }
-    process.stdout.write(`${theme.primaryBold(`${proc.name} logs`)}\n\n`);
+    process.stdout.write(`${theme.primaryBold(t('logs.title', { name: proc.name }))}\n\n`);
     if (!options.err && out.length > 0) {
-      process.stdout.write(`${theme.muted('— output —')}\n${renderLines(out, theme.text)}\n`);
+      process.stdout.write(`${theme.muted(`— ${t('logs.output')} —`)}\n${renderLines(out, theme.text)}\n`);
     }
     if (!options.out && err.length > 0) {
-      process.stdout.write(`${theme.error('— errors —')}\n${renderLines(err, theme.error)}\n`);
+      process.stdout.write(`${theme.error(`— ${t('logs.errors')} —`)}\n${renderLines(err, theme.error)}\n`);
     }
     if (out.length === 0 && err.length === 0) {
-      printInfo('Geen logregels gevonden.');
+      printInfo(t('logs.noLines'));
     }
     return { process: proc.name, out, err };
   }
@@ -91,7 +92,9 @@ export async function runLogs(target, options = {}) {
   }
   for (const entry of all) {
     const total = entry.out.length + entry.err.length;
-    process.stdout.write(`${theme.primaryBold(`${entry.process.name}`)} ${theme.muted(`(${total} regels)`)}\n`);
+    process.stdout.write(
+      `${theme.primaryBold(entry.process.name)} ${theme.muted(`(${t('logs.lines', { count: total })})`)}\n`
+    );
     if (entry.out.length > 0 && !options.err) {
       process.stdout.write(`${renderLines(entry.out, theme.text)}\n`);
     }

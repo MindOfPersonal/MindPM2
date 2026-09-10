@@ -360,6 +360,24 @@ export const nl = {
   'table.restarts': 'Restarts',
   'table.uptime': 'Uptime',
   'table.pid': 'PID',
+
+  // Extra
+  'start.noTarget': 'Geen applicatie opgegeven. Gebruik "mindpm2 start <script>" of de interactieve modus.',
+  'start.cantStart': 'Kan "{target}" niet starten: geen bestaand bestand en geen bekend PM2-proces.',
+  'save.saving': 'PM2-processlijst opslaan...',
+  'logs.title': '{name} logs',
+  'logs.lines': '{count} regels',
+  'config.set': '{key} = {value}',
+  'dashboard.online': 'online',
+  'dashboard.stopped': 'gestopt',
+  'dashboard.errored': 'foutief',
+  'dashboard.total': 'totaal',
+  'monitor.load': 'Load',
+  'monitor.history': 'Historie',
+  'settings.changeTheme': 'Thema wijzigen',
+  'settings.changeLanguage': 'Taal wijzigen',
+  'settings.themeSet': 'Thema ingesteld op {theme}. Herstart MindPM2 om toe te passen.',
+  'settings.languageSet': 'Taal ingesteld op {language}.',
 };
 
 export default nl;

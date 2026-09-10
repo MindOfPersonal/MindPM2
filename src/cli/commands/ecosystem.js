@@ -5,11 +5,12 @@ import { theme } from '../../ui/colors.js';
 import { withSpinner } from '../../ui/spinner.js';
 import { InvalidInputError } from '../../utils/errors.js';
 import { confirmDangerous } from './helpers.js';
+import { t } from '../../i18n/index.js';
 
 function resolveFile(target) {
   const file = target ?? eco.detect();
   if (!file) {
-    throw new InvalidInputError('Geen ecosystem-bestand gevonden of opgegeven.');
+    throw new InvalidInputError(t('error.noEcosystem'));
   }
   return file;
 }
@@ -25,19 +26,15 @@ export async function runEcosystem(action = 'detect', target, options = {}) {
     case 'validate':
       return validate(target, options);
     case 'start':
-      return actionRun('start', target, options);
     case 'reload':
-      return actionRun('reload', target, options);
     case 'restart':
-      return actionRun('restart', target, options);
     case 'stop':
-      return actionRun('stop', target, options);
     case 'delete':
-      return actionRun('delete', target, options);
+      return actionRun(action, target, options);
     case 'edit':
       return edit(target, options);
     default:
-      throw new InvalidInputError(`Onbekende ecosystem actie: ${action}`);
+      throw new InvalidInputError(t('error.unknownAction', { action }));
   }
 }
 
@@ -48,10 +45,10 @@ function detect(options = {}) {
     return files;
   }
   if (files.length === 0) {
-    printWarning('Geen ecosystem-bestand gevonden in de huidige map.');
+    printWarning(t('eco.none'));
     return [];
   }
-  process.stdout.write(`${theme.primaryBold('Gedetecteerd:')}\n\n`);
+  process.stdout.write(`${theme.primaryBold(t('eco.detected'))}\n\n`);
   for (const file of files) {
     process.stdout.write(`  ${theme.success(file)}\n`);
   }
@@ -66,7 +63,7 @@ async function listApps(target, options = {}) {
     return apps;
   }
   process.stdout.write(`${theme.primaryBold(file)}\n\n`);
-  process.stdout.write(`${theme.muted('Applicaties:')}\n`);
+  process.stdout.write(`${theme.muted(t('eco.apps'))}\n`);
   for (const app of apps) {
     process.stdout.write(`  ${app.name} ${theme.muted(`(${app.script ?? 'no script'})`)}\n`);
   }
@@ -74,9 +71,10 @@ async function listApps(target, options = {}) {
 }
 
 function create(target, options = {}) {
+  void options;
   const name = target ?? 'ecosystem.config.cjs';
   const file = eco.createTemplate(name);
-  printSuccess(`Ecosystem-bestand aangemaakt: ${file}`);
+  printSuccess(t('eco.created', { path: file }));
   return file;
 }
 
@@ -88,9 +86,9 @@ async function validate(target, options = {}) {
     return result;
   }
   if (result.valid) {
-    printSuccess(`Configuratie is geldig: ${file}`);
+    printSuccess(t('eco.valid', { path: file }));
   } else {
-    printWarning(`Configuratie bevat fouten: ${file}`);
+    printWarning(t('eco.invalid', { path: file }));
   }
   for (const error of result.errors) process.stdout.write(`  ${theme.error('✖')} ${error}\n`);
   for (const warning of result.warnings) process.stdout.write(`  ${theme.warning('⚠')} ${warning}\n`);
@@ -101,7 +99,7 @@ async function actionRun(action, target, options = {}) {
   const file = resolveFile(target);
 
   if (action === 'delete') {
-    const ok = await confirmDangerous(`Alle processen uit "${file}" verwijderen?`, options);
+    const ok = await confirmDangerous(t('eco.confirmDelete', { path: file }), options);
     if (!ok) return { cancelled: true };
   }
 
@@ -113,21 +111,24 @@ async function actionRun(action, target, options = {}) {
     delete: eco.remove,
   }[action];
 
-  const result = await withSpinner(`Ecosystem ${action}: ${file}...`, () => fn(file), {
-    successText: `Ecosystem ${action} voltooid: ${file}`,
-  });
+  const result = await withSpinner(
+    t('eco.actionDone', { action, path: file }),
+    () => fn(file),
+    { successText: t('eco.actionDone', { action, path: file }) }
+  );
   return result;
 }
 
 function edit(target) {
   const file = resolveFile(target);
-  const editor = process.env.VISUAL || process.env.EDITOR || (process.platform === 'win32' ? 'notepad' : 'vi');
-  printInfo(`Openen in ${editor}: ${file}`);
+  const editor =
+    process.env.VISUAL || process.env.EDITOR || (process.platform === 'win32' ? 'notepad' : 'vi');
+  printInfo(t('eco.openEditor', { editor, path: file }));
   return new Promise((resolve, reject) => {
     const child = spawn(editor, [file], { stdio: 'inherit', shell: false });
     child.on('exit', (code) => {
       if (code === 0) resolve(file);
-      else reject(new InvalidInputError(`Editor stopte met code ${code}.`));
+      else reject(new InvalidInputError(t('error.editorFailed', { code })));
     });
     child.on('error', reject);
   });

@@ -1,8 +1,9 @@
 import boxen from 'boxen';
-import { theme, progressLine, statusBadge, percent, palette } from './colors.js';
+import { theme, progressLine, statusBadge, percent, palette, sparkline } from './colors.js';
 import { padRight, visibleWidth, terminalWidth } from './screen.js';
 import { formatBytes } from '../system/memory.js';
 import { formatDuration } from './tables.js';
+import { t } from '../i18n/index.js';
 
 const BASE = {
   padding: { top: 0, bottom: 0, left: 1, right: 1 },
@@ -69,24 +70,24 @@ export function dashboardBox(data) {
   lines.push(field('Uptime', data.system.uptime));
 
   lines.push('');
-  lines.push(theme.primaryBold('Processes'));
+  lines.push(theme.primaryBold(t('monitor.processes')));
   lines.push(
-    `  ${theme.success(`✔ ${stats.online} online`)}   ` +
-      `${theme.dim(`● ${stats.stopped} stopped`)}   ` +
-      `${theme.error(`✖ ${stats.errored} errored`)}   ` +
-      `${theme.muted(`${stats.total} total`)}`
+    `  ${theme.success(`✔ ${stats.online} ${t('dashboard.online')}`)}   ` +
+      `${theme.dim(`● ${stats.stopped} ${t('dashboard.stopped')}`)}   ` +
+      `${theme.error(`✖ ${stats.errored} ${t('dashboard.errored')}`)}   ` +
+      `${theme.muted(`${stats.total} ${t('dashboard.total')}`)}`
   );
 
   lines.push('');
-  lines.push(theme.primaryBold('System'));
+  lines.push(theme.primaryBold(t('info.system')));
   lines.push(
-    `  ${progressLine('CPU', data.system.cpu, {
+    `  ${progressLine(t('info.cpu'), data.system.cpu, {
       width: 24,
       labelWidth: 8,
     })}`
   );
   lines.push(
-    `  ${progressLine('Memory', data.system.memoryPercent, {
+    `  ${progressLine(t('info.memory'), data.system.memoryPercent, {
       width: 24,
       labelWidth: 8,
       suffix: `${data.system.memoryUsed} / ${data.system.memoryTotal}`,
@@ -94,7 +95,7 @@ export function dashboardBox(data) {
   );
   if (data.system.diskPercent !== undefined && data.system.diskPercent !== null) {
     lines.push(
-      `  ${progressLine('Disk', data.system.diskPercent, {
+      `  ${progressLine(t('info.disk'), data.system.diskPercent, {
         width: 24,
         labelWidth: 8,
         suffix: data.system.diskSuffix ?? '',
@@ -102,15 +103,18 @@ export function dashboardBox(data) {
     );
   }
 
-  return panel('MindPM2 Dashboard', lines.join('\n'));
+  return panel(t('screen.dashboard'), lines.join('\n'));
 }
 
 export function monitorBox(data) {
   const lines = [];
-  lines.push(theme.primaryBold('System'));
-  lines.push(`  ${progressLine('CPU', data.cpu, { width: 28, labelWidth: 8 })}`);
+  lines.push(theme.primaryBold(t('info.system')));
+  lines.push(`  ${progressLine(t('info.cpu'), data.cpu, { width: 28, labelWidth: 8 })}`);
+  if (Array.isArray(data.history) && data.history.length > 1) {
+    lines.push(`  ${theme.muted(t('monitor.history').padEnd(8))}  ${sparkline(data.history)}`);
+  }
   lines.push(
-    `  ${progressLine('Memory', data.memory.percent, {
+    `  ${progressLine(t('info.memory'), data.memory.percent, {
       width: 28,
       labelWidth: 8,
       suffix: `${data.memory.usedFormatted} / ${data.memory.totalFormatted}`,
@@ -118,7 +122,7 @@ export function monitorBox(data) {
   );
   if (data.disk) {
     lines.push(
-      `  ${progressLine('Disk', data.disk.percent, {
+      `  ${progressLine(t('info.disk'), data.disk.percent, {
         width: 28,
         labelWidth: 8,
         suffix: `${data.disk.usedFormatted} / ${data.disk.totalFormatted}`,
@@ -127,29 +131,29 @@ export function monitorBox(data) {
   }
   if (data.load) {
     lines.push(
-      `  ${theme.muted('Load'.padEnd(8))}  ${theme.text(
+      `  ${theme.muted(t('monitor.load').padEnd(8))}  ${theme.text(
         `${data.load.one.toFixed(2)} ${data.load.five.toFixed(2)} ${data.load.fifteen.toFixed(2)}`
       )}`
     );
   }
 
   lines.push('');
-  lines.push(theme.primaryBold('Processes'));
+  lines.push(theme.primaryBold(t('monitor.processes')));
   if (!data.processes || data.processes.length === 0) {
-    lines.push(theme.dim('  Geen processen.'));
+    lines.push(theme.dim(`  ${t('monitor.noProcesses')}`));
   } else {
     const nameWidth = Math.max(
       16,
       ...data.processes.map((proc) => visibleWidth(proc.name)),
-      visibleWidth('NAME')
+      visibleWidth(t('table.name'))
     );
     const header =
-      `  ${theme.muted(padRight('NAME', nameWidth))}  ` +
-      `${theme.muted(padRight('STATUS', 12))}  ` +
-      `${theme.muted('CPU'.padStart(6))}  ` +
-      `${theme.muted('MEMORY'.padStart(9))}  ` +
-      `${theme.muted('UPTIME'.padStart(8))}  ` +
-      `${theme.muted('PID'.padStart(7))}`;
+      `  ${theme.muted(padRight(t('table.name').toUpperCase(), nameWidth))}  ` +
+      `${theme.muted(padRight(t('table.status').toUpperCase(), 12))}  ` +
+      `${theme.muted(t('table.cpu').toUpperCase().padStart(6))}  ` +
+      `${theme.muted(t('table.memory').toUpperCase().padStart(9))}  ` +
+      `${theme.muted(t('table.uptime').toUpperCase().padStart(8))}  ` +
+      `${theme.muted(t('table.pid').toUpperCase().padStart(7))}`;
     lines.push(header);
     lines.push(`  ${theme.dim('─'.repeat(Math.max(20, visibleWidth(header) - 2)))}`);
     for (const proc of data.processes) {
@@ -165,7 +169,7 @@ export function monitorBox(data) {
     }
   }
 
-  return panel('MindPM2 Monitor', lines.join('\n'));
+  return panel(t('screen.monitor'), lines.join('\n'));
 }
 
 export { boxen, palette };

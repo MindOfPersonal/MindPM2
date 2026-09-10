@@ -14,6 +14,7 @@ import { InvalidInputError } from '../../utils/errors.js';
 import { resolveInputPath } from '../../utils/paths.js';
 import { maskEnvVars } from '../../security/sanitizer.js';
 import { theme } from '../../ui/colors.js';
+import { t } from '../../i18n/index.js';
 
 function parseEnvList(envList) {
   const env = {};
@@ -49,13 +50,11 @@ export async function runStart(target, options = {}) {
         startApplication({ type: 'command', command: options.command, ...normalized })
       );
     }
-    throw new InvalidInputError(
-      'Geen applicatie opgegeven. Gebruik "mindpm2 start <script>" of start de interactieve modus.'
-    );
+    throw new InvalidInputError(t('start.noTarget'));
   }
 
   if (existingFile(target) && isEcosystemPath(target)) {
-    return runWithSpinner(() => startEcosystem(target), `Ecosystem gestart: ${target}`);
+    return runWithSpinner(() => startEcosystem(target), t('start.ecosystemStarted'));
   }
 
   if (options.npm) {
@@ -79,7 +78,7 @@ export async function runStart(target, options = {}) {
 
   try {
     const proc = await findProcess(target);
-    return runWithSpinner(() => startExisting(proc.name), `Gestart: ${proc.name}`);
+    return runWithSpinner(() => startExisting(proc.name), t('action.started', { name: proc.name }));
   } catch {
     const resolved = path.resolve(target);
     if (fs.existsSync(resolved)) {
@@ -87,15 +86,13 @@ export async function runStart(target, options = {}) {
         startApplication({ type: 'javascript', path: resolved, ...normalized })
       );
     }
-    throw new InvalidInputError(
-      `Kan "${target}" niet starten: geen bestaand bestand en geen bekend PM2-proces.`
-    );
+    throw new InvalidInputError(t('start.cantStart', { target }));
   }
 }
 
 async function runWithSpinner(fn, successText) {
-  const result = await withSpinner('Applicatie starten...', fn, {
-    successText: successText ?? 'Applicatie gestart.',
+  const result = await withSpinner(t('action.starting'), fn, {
+    successText: successText ?? t('start.started'),
   });
   return result;
 }

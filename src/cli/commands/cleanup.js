@@ -4,6 +4,7 @@ import { theme } from '../../ui/colors.js';
 import { selectPrompt, BACK } from '../prompts.js';
 import { withSpinner } from '../../ui/spinner.js';
 import { confirmDangerous } from './helpers.js';
+import { t } from '../../i18n/index.js';
 
 export async function findCleanupCandidates() {
   const processes = await listProcesses();
@@ -26,49 +27,51 @@ export async function runCleanup(options = {}) {
     return candidates;
   }
 
-  process.stdout.write(`${theme.primaryBold('Process Cleanup')}\n\n`);
+  process.stdout.write(`${theme.primaryBold(t('cleanup.title'))}\n\n`);
   if (total === 0) {
-    printSuccess('Geen gestopte of foutieve processen gevonden.');
+    printSuccess(t('cleanup.none'));
     return candidates;
   }
 
-  process.stdout.write(`${candidates.stopped.length} stopped processes\n`);
-  process.stdout.write(`${candidates.errored.length} errored processen\n\n`);
+  process.stdout.write(`${t('cleanup.stopped', { count: candidates.stopped.length })}\n`);
+  process.stdout.write(`${t('cleanup.errored', { count: candidates.errored.length })}\n\n`);
 
   if (options.yes) {
     return removeMany([...candidates.stopped, ...candidates.errored], options);
   }
 
-  const action = await selectPrompt('Acties:', [
-    { name: 'Remove stopped processes', value: 'stopped' },
-    { name: 'Remove errored processes', value: 'errored' },
-    { name: 'Review individually', value: 'review' },
-    { name: 'Cancel', value: 'cancel' },
+  const action = await selectPrompt(t('cleanup.actions'), [
+    { name: t('cleanup.removeStopped'), value: 'stopped' },
+    { name: t('cleanup.removeErrored'), value: 'errored' },
+    { name: t('cleanup.review'), value: 'review' },
+    { name: t('common.cancel'), value: 'cancel' },
   ]);
 
   if (action === BACK || action === 'cancel') return { cancelled: true };
   if (action === 'stopped') return removeMany(candidates.stopped, options);
   if (action === 'errored') return removeMany(candidates.errored, options);
-  if (action === 'review') return reviewIndividually([...candidates.stopped, ...candidates.errored], options);
+  if (action === 'review') {
+    return reviewIndividually([...candidates.stopped, ...candidates.errored], options);
+  }
   return { cancelled: true };
 }
 
 async function removeMany(processes, options = {}) {
   if (processes.length === 0) {
-    printInfo('Niets te verwijderen.');
+    printInfo(t('cleanup.nothing'));
     return { removed: [] };
   }
   const names = processes.map((proc) => proc.name);
-  const ok = await confirmDangerous(
-    `Deze processen verwijderen?\n\n${names.map((name) => `  • ${name}`).join('\n')}\n\nDit kan niet ongedaan worden gemaakt.`,
-    options
-  );
+  const confirmText = t('cleanup.confirm', {
+    list: names.map((name) => `  • ${name}`).join('\n'),
+  });
+  const ok = await confirmDangerous(confirmText, options);
   if (!ok) return { cancelled: true };
 
   const removed = [];
   for (const proc of processes) {
-    await withSpinner(`${proc.name} verwijderen...`, () => deleteProcess(proc.name), {
-      successText: `${proc.name} verwijderd.`,
+    await withSpinner(t('action.deleting', { name: proc.name }), () => deleteProcess(proc.name), {
+      successText: t('action.deleted', { name: proc.name }),
     });
     removed.push(proc.name);
   }
@@ -78,11 +81,14 @@ async function removeMany(processes, options = {}) {
 async function reviewIndividually(processes, options = {}) {
   const removed = [];
   for (const proc of processes) {
-    const ok = await confirmDangerous(`"${proc.name}" (${proc.status}) verwijderen?`, options);
+    const ok = await confirmDangerous(
+      t('cleanup.confirmOne', { name: proc.name, status: proc.status }),
+      options
+    );
     if (ok) {
       await deleteProcess(proc.name);
       removed.push(proc.name);
-      printSuccess(`${proc.name} verwijderd.`);
+      printSuccess(t('action.deleted', { name: proc.name }));
     }
   }
   return { removed };

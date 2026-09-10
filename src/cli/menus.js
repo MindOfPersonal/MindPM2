@@ -1,28 +1,29 @@
 import { Separator } from '@inquirer/prompts';
 import { theme } from '../ui/colors.js';
+import { t } from '../i18n/index.js';
 
-export const BACK_CHOICE = { name: theme.dim('← Back'), value: 'back' };
-export const EXIT_CHOICE = { name: theme.dim('Exit'), value: 'exit' };
+export const BACK_CHOICE = { name: theme.dim(t('common.back')), value: 'back' };
+export const EXIT_CHOICE = { name: theme.dim(t('common.exit')), value: 'exit' };
 
 export function mainMenuChoices() {
   return [
-    { name: 'Dashboard', value: 'dashboard' },
-    { name: 'Processes', value: 'processes' },
+    { name: t('menu.dashboard'), value: 'dashboard' },
+    { name: t('menu.processes'), value: 'processes' },
     new Separator(),
-    { name: 'Start Application', value: 'start' },
-    { name: 'Process Logs', value: 'logs' },
-    { name: 'Monitoring', value: 'monitor' },
+    { name: t('menu.start'), value: 'start' },
+    { name: t('menu.logs'), value: 'logs' },
+    { name: t('menu.monitor'), value: 'monitor' },
     new Separator(),
-    { name: 'Startup', value: 'startup' },
-    { name: 'Save / Restore', value: 'save' },
-    { name: 'Ecosystem', value: 'ecosystem' },
+    { name: t('menu.startup'), value: 'startup' },
+    { name: t('menu.save'), value: 'save' },
+    { name: t('menu.ecosystem'), value: 'ecosystem' },
     new Separator(),
-    { name: 'Server Information', value: 'server' },
-    { name: 'Cleanup', value: 'cleanup' },
-    { name: 'Settings', value: 'settings' },
+    { name: t('menu.server'), value: 'server' },
+    { name: t('menu.cleanup'), value: 'cleanup' },
+    { name: t('menu.settings'), value: 'settings' },
     new Separator(),
-    { name: 'Doctor', value: 'doctor' },
-    { name: 'Update', value: 'update' },
+    { name: t('menu.doctor'), value: 'doctor' },
+    { name: t('menu.update'), value: 'update' },
     new Separator(),
     EXIT_CHOICE,
   ];
@@ -30,23 +31,23 @@ export function mainMenuChoices() {
 
 export function processActionChoices(proc) {
   const choices = [
-    { name: 'View Details', value: 'details' },
-    { name: 'View Logs', value: 'logs' },
-    { name: 'Environment', value: 'environment' },
+    { name: t('action.details'), value: 'details' },
+    { name: t('action.logs'), value: 'logs' },
+    { name: t('action.environment'), value: 'environment' },
     new Separator(),
   ];
   if (proc.status !== 'online') {
-    choices.push({ name: theme.success('Start'), value: 'start' });
+    choices.push({ name: theme.success(t('action.start')), value: 'start' });
   }
   if (proc.status === 'online') {
-    choices.push({ name: theme.warning('Stop'), value: 'stop' });
-    choices.push({ name: 'Restart', value: 'restart' });
-    choices.push({ name: 'Reload', value: 'reload' });
+    choices.push({ name: theme.warning(t('action.stop')), value: 'stop' });
+    choices.push({ name: t('action.restart'), value: 'restart' });
+    choices.push({ name: t('action.reload'), value: 'reload' });
   }
   choices.push(new Separator());
-  choices.push({ name: 'Reset', value: 'reset' });
-  choices.push({ name: 'Open Working Directory', value: 'open-cwd' });
-  choices.push({ name: theme.error('Delete'), value: 'delete' });
+  choices.push({ name: t('action.reset'), value: 'reset' });
+  choices.push({ name: t('action.openDir'), value: 'open-cwd' });
+  choices.push({ name: theme.error(t('action.delete')), value: 'delete' });
   choices.push(new Separator());
   choices.push(BACK_CHOICE);
   return choices;
@@ -54,15 +55,15 @@ export function processActionChoices(proc) {
 
 export function logsMenuChoices() {
   return [
-    { name: 'Select Process', value: 'process' },
-    { name: 'All Processes', value: 'all' },
+    { name: t('logs.menu.selectProcess'), value: 'process' },
+    { name: t('logs.menu.all'), value: 'all' },
     new Separator(),
-    { name: 'Error Logs', value: 'errors' },
-    { name: 'Output Logs', value: 'output' },
-    { name: 'Live Logs', value: 'live' },
+    { name: t('logs.menu.errors'), value: 'errors' },
+    { name: t('logs.menu.output'), value: 'output' },
+    { name: t('logs.menu.live'), value: 'live' },
     new Separator(),
-    { name: 'Clear Logs', value: 'clear' },
-    { name: 'Open Log Files', value: 'files' },
+    { name: t('logs.menu.clear'), value: 'clear' },
+    { name: t('logs.menu.files'), value: 'files' },
     new Separator(),
     BACK_CHOICE,
   ];
@@ -70,10 +71,10 @@ export function logsMenuChoices() {
 
 export function saveRestoreChoices() {
   return [
-    { name: 'Save current processes', value: 'save' },
-    { name: 'Restore saved processes', value: 'restore' },
+    { name: t('save.menu.save'), value: 'save' },
+    { name: t('save.menu.restore'), value: 'restore' },
     new Separator(),
-    { name: 'Show saved configuration', value: 'show' },
+    { name: t('save.menu.show'), value: 'show' },
     new Separator(),
     BACK_CHOICE,
   ];
@@ -81,11 +82,11 @@ export function saveRestoreChoices() {
 
 export function startupChoices() {
   return [
-    { name: 'Generate Startup Command', value: 'generate' },
-    { name: 'Show Startup Status', value: 'status' },
-    { name: 'Service Status', value: 'service' },
+    { name: t('startup.menu.generate'), value: 'generate' },
+    { name: t('startup.menu.status'), value: 'status' },
+    { name: t('startup.menu.service'), value: 'service' },
     new Separator(),
-    { name: theme.warning('Disable Startup'), value: 'disable' },
+    { name: theme.warning(t('startup.menu.disable')), value: 'disable' },
     new Separator(),
     BACK_CHOICE,
   ];
@@ -93,15 +94,15 @@ export function startupChoices() {
 
 export function ecosystemChoices() {
   return [
-    { name: 'Detect ecosystem file', value: 'detect' },
-    { name: 'Create ecosystem file', value: 'create' },
+    { name: t('eco.menu.detect'), value: 'detect' },
+    { name: t('eco.menu.create'), value: 'create' },
     new Separator(),
-    { name: 'Start ecosystem', value: 'start' },
-    { name: 'Reload ecosystem', value: 'reload' },
-    { name: 'Stop ecosystem', value: 'stop' },
+    { name: t('eco.menu.start'), value: 'start' },
+    { name: t('eco.menu.reload'), value: 'reload' },
+    { name: t('eco.menu.stop'), value: 'stop' },
     new Separator(),
-    { name: 'Edit ecosystem', value: 'edit' },
-    { name: 'Validate ecosystem', value: 'validate' },
+    { name: t('eco.menu.edit'), value: 'edit' },
+    { name: t('eco.menu.validate'), value: 'validate' },
     new Separator(),
     BACK_CHOICE,
   ];
@@ -109,10 +110,13 @@ export function ecosystemChoices() {
 
 export function settingsChoices() {
   return [
-    { name: 'Show configuration', value: 'show' },
-    { name: 'Edit configuration', value: 'edit' },
+    { name: t('config.show'), value: 'show' },
+    { name: t('settings.changeTheme'), value: 'theme' },
+    { name: t('settings.changeLanguage'), value: 'language' },
     new Separator(),
-    { name: theme.warning('Reset configuration'), value: 'reset' },
+    { name: t('config.edit'), value: 'edit' },
+    new Separator(),
+    { name: theme.warning(t('config.reset')), value: 'reset' },
     new Separator(),
     BACK_CHOICE,
   ];
@@ -120,15 +124,15 @@ export function settingsChoices() {
 
 export function sortChoices() {
   return [
-    { name: 'Name', value: 'name' },
-    { name: 'ID', value: 'id' },
-    { name: 'Status', value: 'status' },
+    { name: t('table.name'), value: 'name' },
+    { name: t('table.id'), value: 'id' },
+    { name: t('table.status'), value: 'status' },
     new Separator(),
-    { name: 'CPU', value: '-cpu' },
-    { name: 'Memory', value: '-memory' },
-    { name: 'Uptime', value: '-uptime' },
-    { name: 'Restarts', value: '-restarts' },
-    { name: 'PID', value: 'pid' },
+    { name: t('table.cpu'), value: '-cpu' },
+    { name: t('table.memory'), value: '-memory' },
+    { name: t('table.uptime'), value: '-uptime' },
+    { name: t('table.restarts'), value: '-restarts' },
+    { name: t('table.pid'), value: 'pid' },
     new Separator(),
     BACK_CHOICE,
   ];

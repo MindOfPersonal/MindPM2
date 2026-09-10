@@ -3,6 +3,7 @@ import { printJson } from '../output.js';
 import { theme } from '../../ui/colors.js';
 import { panel } from '../../ui/boxes.js';
 import { keyValue } from '../../ui/tables.js';
+import { t } from '../../i18n/index.js';
 
 export async function runInfo(options = {}) {
   const info = await getServerInfo({ sampleMs: options.json ? 0 : 150 });
@@ -13,35 +14,35 @@ export async function runInfo(options = {}) {
   }
 
   const envRows = [
-    ['Hostname', info.hostname],
-    ['OS', info.os],
-    ['Architecture', info.arch],
-    ['Kernel', info.kernel],
-    ['User', info.user],
+    [t('info.hostname'), info.hostname],
+    [t('info.os'), info.os],
+    [t('info.architecture'), info.arch],
+    [t('info.kernel'), info.kernel],
+    [t('info.user'), info.user],
   ];
   const runtimeRows = [
-    ['Node', info.node],
-    ['NPM', info.npm ?? theme.dim('unknown')],
-    ['PM2', info.pm2Formatted ?? theme.warning('not installed')],
+    [t('info.node'), info.node],
+    [t('info.npm'), info.npm ?? theme.dim(t('common.unknown'))],
+    [t('info.pm2'), info.pm2Formatted ?? theme.warning(t('info.notInstalled'))],
   ];
   const systemRows = [
-    ['CPU', info.cpuModel],
-    ['Cores', String(info.cpuCores)],
-    ['CPU usage', `${info.cpu.usage}%`],
-    ['Memory', `${info.memory.usedFormatted} / ${info.memory.totalFormatted}`],
+    [t('info.cpu'), info.cpuModel],
+    [t('info.cores'), String(info.cpuCores)],
+    [t('info.cpuUsage'), `${info.cpu.usage}%`],
+    [t('info.memory'), `${info.memory.usedFormatted} / ${info.memory.totalFormatted}`],
     [
-      'Disk',
+      t('info.disk'),
       info.disk
         ? `${info.disk.usedFormatted} / ${info.disk.totalFormatted} (${info.disk.percent}%)`
-        : theme.dim('unknown'),
+        : theme.dim(t('common.unknown')),
     ],
-    ['Uptime', info.hostUptimeFormatted],
+    [t('info.uptime'), info.hostUptimeFormatted],
   ];
 
   process.stdout.write(
-    `${panel('Environment', keyValue(envRows))}\n\n` +
-      `${panel('Runtime', keyValue(runtimeRows))}\n\n` +
-      `${panel('System', keyValue(systemRows))}\n`
+    `${panel(t('info.environment'), keyValue(envRows))}\n\n` +
+      `${panel(t('info.runtime'), keyValue(runtimeRows))}\n\n` +
+      `${panel(t('info.system'), keyValue(systemRows))}\n`
   );
   return info;
 }

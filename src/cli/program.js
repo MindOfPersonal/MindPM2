@@ -25,6 +25,7 @@ import { runInteractive } from './interactive.js';
 import { ensurePm2Available } from '../pm2/daemon.js';
 import { printJson } from './output.js';
 import { theme } from '../ui/colors.js';
+import { t } from '../i18n/index.js';
 
 function collect(value, previous) {
   return previous.concat([value]);
@@ -347,8 +348,8 @@ export function buildProgram() {
       const operands = program.args ?? [];
       if (operands.length > 0) {
         process.stderr.write(
-          `${theme.error('✖')} Onbekend commando: "${operands[0]}".\n` +
-            `${theme.muted('Gebruik "mindpm2 --help" voor beschikbare commando\'s.')}\n`
+          `${theme.error('✖')} ${t('error.unknownCommand', { command: operands[0] })}\n` +
+            `${theme.muted(t('error.helpHint'))}\n`
         );
         process.exitCode = 2;
         return;

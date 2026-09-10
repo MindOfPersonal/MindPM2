@@ -23,7 +23,9 @@ MindPM2 is **not** a replacement for PM2 — it is a friendly management layer o
 - 🩺 `doctor` diagnostics with suggested fixes
 - 🔐 Sensitive environment variables are masked by default
 - 🎨 Clean, modern UI with tables, boxes, colors and spinners
-- 🌍 Cross-platform: Linux, macOS and Windows
+- 🌗 Four themes (`default`, `dark`, `light`, `mono`)
+- 🌍 English and Dutch interface
+- 🌐 Cross-platform: Linux, macOS and Windows
 - 📦 NPM-ready with `npx` and `npm link` support
 
 ---
@@ -177,6 +179,7 @@ MindPM2 stores its configuration in `~/.mindpm2/config.json`:
 ```json
 {
   "theme": "default",
+  "language": "auto",
   "autoRefresh": true,
   "refreshInterval": 3000,
   "showLogo": true,
@@ -196,6 +199,24 @@ mindpm2 config get refreshInterval
 mindpm2 config set refreshInterval 5000
 mindpm2 config reset
 mindpm2 config edit
+```
+
+### Themes
+
+MindPM2 ships with four themes: `default`, `dark`, `light` and `mono`.
+
+```bash
+mindpm2 config set theme mono
+```
+
+### Language
+
+The interface is available in **English** and **Dutch**. `language` accepts `auto`, `en` or `nl`.
+`auto` follows your system locale (or `MINDPM2_LANG`).
+
+```bash
+mindpm2 config set language nl
+MINDPM2_LANG=nl mindpm2
 ```
 
 ---

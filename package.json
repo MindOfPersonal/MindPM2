@@ -18,6 +18,14 @@
     "README.md",
     "LICENSE"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MindOfPersonal/MindPM2.git"
+  },
+  "homepage": "https://github.com/MindOfPersonal/MindPM2#readme",
+  "bugs": {
+    "url": "https://github.com/MindOfPersonal/MindPM2/issues"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
@@ -27,7 +35,8 @@
     "test:unit": "node --test \"tests/unit/*.test.js\"",
     "test:integration": "node --test \"tests/integration/*.test.js\"",
     "test:cli": "node --test \"tests/cli/*.test.js\"",
-    "doctor": "node src/index.js doctor"
+    "doctor": "node src/index.js doctor",
+    "prepublishOnly": "npm test"
   },
   "keywords": [
     "pm2",

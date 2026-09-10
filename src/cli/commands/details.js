@@ -5,6 +5,7 @@ import { statusBadge, theme } from '../../ui/colors.js';
 import { panel } from '../../ui/boxes.js';
 import { formatEnvEntries } from '../../security/sanitizer.js';
 import { printJson } from '../output.js';
+import { t } from '../../i18n/index.js';
 
 export function formatTimestamp(ms) {
   if (!ms) return '-';
@@ -22,27 +23,27 @@ export async function runDetails(target, options = {}) {
   }
 
   const rows = [
-    ['ID', proc.id],
-    ['Status', statusBadge(proc.status)],
-    ['PID', proc.pid || '-'],
-    ['Mode', proc.mode],
-    ['Instances', proc.instances],
-    ['Node', proc.nodeVersion ?? '-'],
+    [t('details.id'), proc.id],
+    [t('details.status'), statusBadge(proc.status)],
+    [t('details.pid'), proc.pid || '-'],
+    [t('details.mode'), proc.mode],
+    [t('details.instances'), proc.instances],
+    [t('details.node'), proc.nodeVersion ?? '-'],
     ['', ''],
-    ['CPU', `${proc.cpu}%`],
-    ['Memory', formatBytes(proc.memory)],
+    [t('details.cpu'), `${proc.cpu}%`],
+    [t('details.memory'), formatBytes(proc.memory)],
     ['', ''],
-    ['Restarts', proc.restartTime],
-    ['Unstable', proc.unstableRestarts],
+    [t('details.restarts'), proc.restartTime],
+    [t('details.unstable'), proc.unstableRestarts],
     ['', ''],
-    ['Script', proc.script ?? '-'],
-    ['Directory', proc.cwd ?? '-'],
-    ['Interpreter', proc.interpreter ?? '-'],
-    ['Watch', proc.watch ? 'enabled' : 'disabled'],
-    ['Max memory', proc.maxMemoryRestart ?? '-'],
+    [t('details.script'), proc.script ?? '-'],
+    [t('details.directory'), proc.cwd ?? '-'],
+    [t('details.interpreter'), proc.interpreter ?? '-'],
+    [t('details.watch'), proc.watch ? t('details.enabled') : t('details.disabled')],
+    [t('details.maxMemory'), proc.maxMemoryRestart ?? '-'],
     ['', ''],
-    ['Created', formatTimestamp(proc.createdAt)],
-    ['Uptime', formatDuration(proc.uptime)],
+    [t('details.created'), formatTimestamp(proc.createdAt)],
+    [t('details.uptime'), formatDuration(proc.uptime)],
   ];
 
   process.stdout.write(`${panel(proc.name, keyValue(rows))}\n`);
@@ -52,7 +53,7 @@ export async function runDetails(target, options = {}) {
       .map(([key, value]) => `  ${theme.muted(`${key}=`)}${truncate(value, 64)}`)
       .join('\n');
     process.stdout.write(
-      `\n${panel('Environment', `${theme.dim('Gevoelige waarden zijn gemaskeerd')}\n\n${envLines}`)}\n`
+      `\n${panel(t('details.environment'), `${theme.dim(t('common.masked'))}\n\n${envLines}`)}\n`
     );
   }
 

@@ -3,14 +3,14 @@ import {
   getStartupStatus,
   unstartup,
 } from '../../pm2/startup.js';
-import { getPlatformModule } from '../../system/platform/index.js';
-import { printSuccess, printWarning, printInfo, printJson } from '../output.js';
+import { printWarning, printInfo, printJson } from '../output.js';
 import { confirmDangerous } from './helpers.js';
 import { theme } from '../../ui/colors.js';
 import { withSpinner } from '../../ui/spinner.js';
 import { panel } from '../../ui/boxes.js';
 import { keyValue } from '../../ui/tables.js';
 import { isRoot } from '../../security/permissions.js';
+import { t } from '../../i18n/index.js';
 
 export async function runStartup(options = {}) {
   const status = getStartupStatus();
@@ -25,27 +25,24 @@ export async function runStartup(options = {}) {
   }
 
   if (!status.supported) {
-    printWarning('Startup management wordt niet ondersteund op dit platform.');
+    printWarning(t('startup.notSupported'));
     return { supported: false };
   }
 
   if (options.disable) {
-    const ok = await confirmDangerous('PM2 startup uitschakelen?', options);
+    const ok = await confirmDangerous(t('startup.confirmDisable'), options);
     if (!ok) return { cancelled: true };
-    const result = await withSpinner('PM2 startup uitschakelen...', () => unstartup(status.initSystem), {
-      successText: 'PM2 startup uitgeschakeld (of commando gegenereerd).',
+    const result = await withSpinner(t('startup.disabling'), () => unstartup(status.initSystem), {
+      successText: t('startup.disabledDone'),
     });
     printOutput(result);
     return { disabled: true };
   }
 
-  process.stdout.write(`${theme.muted('Gedetecteerd systeem:')} ${status.platform}\n`);
-  process.stdout.write(`${theme.muted('Init systeem:')} ${status.initSystem}\n\n`);
+  process.stdout.write(`${theme.muted(t('startup.detectedSystem'))} ${status.platform}\n`);
+  process.stdout.write(`${theme.muted(t('startup.detectedInit'))} ${status.initSystem}\n\n`);
 
-  const ok = await confirmDangerous(
-    'PM2 startup configuratie genereren?',
-    { ...options, default: true }
-  );
+  const ok = await confirmDangerous(t('startup.confirmGenerate'), { ...options, default: true });
   if (!ok) return { cancelled: true };
 
   const { output, command } = await generateStartupCommand();
@@ -53,10 +50,10 @@ export async function runStartup(options = {}) {
 
   if (command) {
     process.stdout.write(
-      `\n${theme.warning.bold('Voer dit commando uit met verhoogde rechten:')}\n\n  ${theme.accent(command)}\n`
+      `\n${theme.warning.bold(t('startup.elevated'))}\n\n  ${theme.accent(command)}\n`
     );
     if (isRoot()) {
-      printInfo('MindPM2 voert sudo-commando\'s nooit automatisch uit.');
+      printInfo(t('startup.noAutoSudo'));
     }
   }
 
@@ -69,13 +66,13 @@ export async function runStartup(options = {}) {
 function printStartupStatus(status) {
   process.stdout.write(
     `${panel(
-      'Startup Status',
+      t('startup.status'),
       keyValue([
-        ['Status', status.enabled ? theme.success('enabled') : theme.warning('disabled')],
-        ['Platform', status.platform],
-        ['Init system', status.initSystem],
-        ['Service', status.serviceName ?? '-'],
-        ['User', status.user],
+        [t('startup.status'), status.enabled ? theme.success(t('startup.enabled')) : theme.warning(t('startup.disabled'))],
+        [t('startup.platform'), status.platform],
+        [t('startup.initSystem'), status.initSystem],
+        [t('startup.service'), status.serviceName ?? '-'],
+        [t('startup.user'), status.user],
       ])
     )}\n`
   );

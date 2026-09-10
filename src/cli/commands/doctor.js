@@ -1,9 +1,5 @@
 import { listProcesses } from '../../pm2/processes.js';
-import {
-  isPm2Installed,
-  isDaemonRunning,
-  getPm2Version,
-} from '../../pm2/daemon.js';
+import { isPm2Installed, isDaemonRunning, getPm2Version } from '../../pm2/daemon.js';
 import { getNpmVersion } from '../../system/info.js';
 import {
   getPm2Home,
@@ -20,110 +16,136 @@ import { getDiskInfo } from '../../system/disk.js';
 import { getOsInfo } from '../../system/os.js';
 import { theme } from '../../ui/colors.js';
 import { panel } from '../../ui/boxes.js';
+import { section } from '../../ui/screen.js';
 import { printJson } from '../output.js';
+import { t } from '../../i18n/index.js';
+
+const GROUP_ORDER = ['environment', 'pm2', 'permissions', 'system'];
+const GROUP_KEY = {
+  environment: 'doctor.group.environment',
+  pm2: 'doctor.group.pm2',
+  permissions: 'doctor.group.permissions',
+  system: 'doctor.group.system',
+};
 
 async function runChecks() {
   const checks = [];
-  const add = (name, status, message, fix) => checks.push({ name, status, message, fix });
+  const add = (group, name, status, message, fix) =>
+    checks.push({ group, name, status, message, fix });
 
-  const run = async (name, fn) => {
-    try {
-      const outcome = await fn();
-      if (outcome && typeof outcome === 'object') {
-        add(name, outcome.status ?? (outcome.ok ? 'ok' : 'error'), outcome.message ?? '', outcome.fix);
-      } else if (outcome === true || outcome === undefined) {
-        add(name, 'ok', '');
-      } else {
-        add(name, 'warn', String(outcome));
-      }
-    } catch (error) {
-      add(name, 'error', error?.message ?? String(error), error?.hint);
-    }
-  };
+  add('environment', t('doctor.check.node'), 'ok', process.version);
 
-  add('Node.js installed', 'ok', process.version);
-
-  await run('NPM installed', async () => {
+  try {
     const npm = await getNpmVersion();
-    return npm ? { ok: true, message: `v${npm}` } : { ok: false, status: 'error', message: 'npm niet gevonden' };
-  });
+    add(
+      'environment',
+      t('doctor.check.npm'),
+      npm ? 'ok' : 'error',
+      npm ? `v${npm}` : t('doctor.check.npmMissing')
+    );
+  } catch (error) {
+    add('environment', t('doctor.check.npm'), 'error', error.message);
+  }
 
   let pm2Version = null;
   const pm2Ok = await isPm2Installed();
-  add('PM2 installed', pm2Ok ? 'ok' : 'error', pm2Ok ? '' : 'PM2 niet gevonden in PATH', pm2Ok ? null : 'npm install -g pm2');
+  add(
+    'environment',
+    t('doctor.check.pm2Installed'),
+    pm2Ok ? 'ok' : 'error',
+    pm2Ok ? '' : t('error.pm2NotFound'),
+    pm2Ok ? null : 'npm install -g pm2'
+  );
 
   if (pm2Ok) {
     try {
       pm2Version = await getPm2Version();
-      add('PM2 version', 'ok', `v${pm2Version}`);
+      add('environment', t('doctor.check.pm2Version'), 'ok', `v${pm2Version}`);
     } catch (error) {
-      add('PM2 version', 'warn', error.message);
+      add('environment', t('doctor.check.pm2Version'), 'warn', error.message);
     }
 
     const daemon = await isDaemonRunning();
     add(
-      'PM2 daemon running',
+      'pm2',
+      t('doctor.check.daemon'),
       daemon ? 'ok' : 'warn',
-      daemon ? '' : 'PM2 daemon reageert niet op ping',
+      daemon ? '' : t('doctor.check.daemonFix'),
       daemon ? null : 'pm2 ping\npm2 resurrect'
     );
 
     const home = getPm2Home();
-    add('PM2 home directory', canAccess(home) ? 'ok' : 'warn', home, canAccess(home) ? null : 'Start PM2 een keer handmatig.');
+    add(
+      'pm2',
+      t('doctor.check.home'),
+      canAccess(home) ? 'ok' : 'warn',
+      home,
+      canAccess(home) ? null : t('doctor.check.homeFix')
+    );
 
     if (canAccess(home)) {
-      add('PM2 home readable', canRead(home) ? 'ok' : 'error', '');
-      add('PM2 home writable', canWrite(home) ? 'ok' : 'error', '');
+      add('pm2', t('doctor.check.homeReadable'), canRead(home) ? 'ok' : 'error', '');
+      add('pm2', t('doctor.check.homeWritable'), canWrite(home) ? 'ok' : 'error', '');
     }
 
     const dump = getPm2DumpPath();
     add(
-      'PM2 dump file',
+      'pm2',
+      t('doctor.check.dump'),
       fileExists(dump) ? 'ok' : 'warn',
-      fileExists(dump) ? '' : 'Nog geen dump opgeslagen',
+      fileExists(dump) ? '' : t('doctor.check.dumpMissing'),
       fileExists(dump) ? null : 'mindpm2 save'
     );
 
-    const logsDir = getPm2LogsDir();
-    add('Log directory', canAccess(logsDir) ? 'ok' : 'warn', logsDir);
+    add('pm2', t('doctor.check.logs'), canAccess(getPm2LogsDir()) ? 'ok' : 'warn', getPm2LogsDir());
 
     try {
       const processes = await listProcesses();
-      add('Process list', 'ok', `${processes.length} processen`);
+      add('pm2', t('doctor.check.processList'), 'ok', t('doctor.check.processCount', { count: processes.length }));
     } catch (error) {
-      add('Process list', 'error', error.message, 'mindpm2 list');
+      add('pm2', t('doctor.check.processList'), 'error', error.message, 'mindpm2 list');
     }
   }
 
   const user = getCurrentUser();
-  add('Current user', 'ok', `${user}${isRoot() ? ' (root)' : ''}`);
+  add('permissions', t('doctor.check.user'), 'ok', `${user}${isRoot() ? ' (root)' : ''}`);
 
   const mindHome = getMindPM2Home();
-  add('MindPM2 home', canAccess(mindHome) || isWritable(mindHome) ? 'ok' : 'warn', mindHome);
+  add(
+    'permissions',
+    t('doctor.check.mindHome'),
+    canAccess(mindHome) || isWritable(mindHome) ? 'ok' : 'warn',
+    mindHome
+  );
 
   try {
     const cpu = getCpuInfo();
-    add('CPU', 'ok', `${cpu.cores} cores`);
+    add('system', t('doctor.check.cpu'), 'ok', t('doctor.check.cpuCores', { count: cpu.cores }));
   } catch (error) {
-    add('CPU', 'warn', error.message);
+    add('system', t('doctor.check.cpu'), 'warn', error.message);
   }
 
   try {
     const mem = getMemoryInfo();
-    add('Memory', 'ok', `${mem.usedFormatted} / ${mem.totalFormatted}`);
+    add('system', t('doctor.check.memory'), 'ok', `${mem.usedFormatted} / ${mem.totalFormatted}`);
   } catch (error) {
-    add('Memory', 'warn', error.message);
+    add('system', t('doctor.check.memory'), 'warn', error.message);
   }
 
   try {
     const disk = await getDiskInfo();
-    add('Disk', disk ? 'ok' : 'warn', disk ? `${disk.usedFormatted} / ${disk.totalFormatted}` : 'onbekend');
+    add(
+      'system',
+      t('doctor.check.disk'),
+      disk ? 'ok' : 'warn',
+      disk ? `${disk.usedFormatted} / ${disk.totalFormatted}` : t('common.unknown')
+    );
   } catch (error) {
-    add('Disk', 'warn', error.message);
+    add('system', t('doctor.check.disk'), 'warn', error.message);
   }
 
   const os = getOsInfo();
-  add('Operating system', 'ok', `${os.distro} (${os.arch})`);
+  add('system', t('doctor.check.os'), 'ok', `${os.distro} (${os.arch})`);
 
   return checks;
 }
@@ -145,28 +167,36 @@ export async function runDoctor(options = {}) {
     return { checks, passed, warnings, errors };
   }
 
-  process.stdout.write(`${theme.primaryBold('MindPM2 Doctor')}\n\n`);
-  for (const check of checks) {
-    const suffix = check.message ? ` ${theme.muted(`- ${check.message}`)}` : '';
-    process.stdout.write(`  ${iconFor(check.status)} ${check.name}${suffix}\n`);
+  process.stdout.write(`${theme.primaryBold(t('doctor.title'))}\n`);
+
+  for (const group of GROUP_ORDER) {
+    const groupChecks = checks.filter((check) => check.group === group);
+    if (groupChecks.length === 0) continue;
+    process.stdout.write(`${section(t(GROUP_KEY[group]))}\n`);
+    for (const check of groupChecks) {
+      const suffix = check.message ? ` ${theme.muted(`- ${check.message}`)}` : '';
+      process.stdout.write(`  ${iconFor(check.status)} ${check.name}${suffix}\n`);
+    }
   }
 
   const summary = [
-    `${theme.muted('Checks:'.padEnd(12))}${checks.length}`,
-    `${theme.muted('Passed:'.padEnd(12))}${theme.success(String(passed))}`,
-    `${theme.muted('Warnings:'.padEnd(12))}${theme.warning(String(warnings))}`,
-    `${theme.muted('Errors:'.padEnd(12))}${theme.error(String(errors))}`,
+    `${theme.muted(t('doctor.checks').padEnd(14))}${checks.length}`,
+    `${theme.muted(t('doctor.passed').padEnd(14))}${theme.success(String(passed))}`,
+    `${theme.muted(t('doctor.warnings').padEnd(14))}${theme.warning(String(warnings))}`,
+    `${theme.muted(t('doctor.errors').padEnd(14))}${theme.error(String(errors))}`,
     '',
-    errors === 0 ? theme.success('System looks healthy.') : theme.error('Er zijn problemen gevonden.'),
+    errors === 0 ? theme.success(t('doctor.healthy')) : theme.error(t('doctor.problems')),
   ];
 
-  process.stdout.write(`\n${panel('Result', summary.join('\n'))}\n`);
+  process.stdout.write(`\n${panel(t('doctor.result'), summary.join('\n'))}\n`);
 
   if (errors > 0) {
     for (const check of checks.filter((item) => item.status === 'error')) {
       process.stdout.write(`\n${theme.error.bold(check.name)}\n`);
       if (check.message) process.stdout.write(`  ${check.message}\n`);
-      if (check.fix) process.stdout.write(`\n  ${theme.muted('Suggested fix:')}\n\n    ${check.fix}\n`);
+      if (check.fix) {
+        process.stdout.write(`\n  ${theme.muted(t('doctor.suggestedFix'))}\n\n    ${check.fix}\n`);
+      }
     }
   }
 

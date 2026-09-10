@@ -6,6 +6,7 @@ import { theme } from '../../ui/colors.js';
 import { InvalidInputError } from '../../utils/errors.js';
 import { ensureDir, getMindPM2Home, getConfigPath } from '../../utils/paths.js';
 import { confirmDangerous } from './helpers.js';
+import { t } from '../../i18n/index.js';
 
 function coerce(value) {
   if (value === 'true') return true;
@@ -32,7 +33,7 @@ export async function runConfig(action = 'show', key, value, options = {}) {
     case 'edit':
       return edit();
     default:
-      throw new InvalidInputError(`Onbekende config actie: ${action}`);
+      throw new InvalidInputError(t('error.unknownAction', { action }));
   }
 }
 
@@ -42,7 +43,7 @@ function show(options = {}) {
     printJson(config);
     return config;
   }
-  process.stdout.write(`${theme.primaryBold('MindPM2 Configuratie')}\n`);
+  process.stdout.write(`${theme.primaryBold(t('config.title'))}\n`);
   process.stdout.write(`${theme.muted(getConfigPath())}\n\n`);
   const width = Math.max(...Object.keys(config).map((item) => item.length));
   for (const [item, val] of Object.entries(config)) {
@@ -52,9 +53,9 @@ function show(options = {}) {
 }
 
 function getKey(key, options = {}) {
-  if (!key) throw new InvalidInputError('Geen configuratiesleutel opgegeven.');
+  if (!key) throw new InvalidInputError(t('error.noConfigKey'));
   const config = loadConfig();
-  if (!(key in config)) throw new InvalidInputError(`Onbekende configuratiesleutel: ${key}`);
+  if (!(key in config)) throw new InvalidInputError(t('error.unknownConfigKey', { key }));
   const value = config[key];
   if (options.json) {
     printJson({ [key]: value });
@@ -65,22 +66,22 @@ function getKey(key, options = {}) {
 }
 
 function setKey(key, rawValue, options = {}) {
-  if (!key) throw new InvalidInputError('Geen configuratiesleutel opgegeven.');
+  if (!key) throw new InvalidInputError(t('error.noConfigKey'));
   const config = loadConfig();
-  if (!(key in config)) throw new InvalidInputError(`Onbekende configuratiesleutel: ${key}`);
+  if (!(key in config)) throw new InvalidInputError(t('error.unknownConfigKey', { key }));
   const value = coerce(rawValue);
   const updated = saveConfig({ ...config, [key]: value });
   clearCache();
-  if (!options.json) printSuccess(`${key} = ${updated[key]}`);
+  if (!options.json) printSuccess(t('config.set', { key, value: updated[key] }));
   return updated[key];
 }
 
 async function reset(options = {}) {
-  const ok = await confirmDangerous('Configuratie terugzetten naar standaardwaarden?', options);
+  const ok = await confirmDangerous(t('config.confirmReset'), options);
   if (!ok) return { cancelled: true };
   resetConfig();
   clearCache();
-  printSuccess('Configuratie gereset naar standaardwaarden.');
+  printSuccess(t('config.resetDone'));
   return true;
 }
 
@@ -90,13 +91,14 @@ function edit() {
   if (!fs.existsSync(file)) {
     fs.writeFileSync(file, `${JSON.stringify(loadConfig(), null, 2)}\n`, 'utf8');
   }
-  const editor = process.env.VISUAL || process.env.EDITOR || (process.platform === 'win32' ? 'notepad' : 'vi');
+  const editor =
+    process.env.VISUAL || process.env.EDITOR || (process.platform === 'win32' ? 'notepad' : 'vi');
   return new Promise((resolve, reject) => {
     const child = spawn(editor, [file], { stdio: 'inherit', shell: false });
     child.on('exit', (code) => {
       clearCache();
       if (code === 0) resolve(file);
-      else reject(new InvalidInputError(`Editor stopte met code ${code}.`));
+      else reject(new InvalidInputError(t('error.editorFailed', { code })));
     });
     child.on('error', reject);
   });

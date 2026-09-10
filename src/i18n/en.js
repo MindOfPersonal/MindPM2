@@ -359,6 +359,24 @@ export const en = {
   'table.restarts': 'Restarts',
   'table.uptime': 'Uptime',
   'table.pid': 'PID',
+
+  // Extra
+  'start.noTarget': 'No application specified. Use "mindpm2 start <script>" or run interactive mode.',
+  'start.cantStart': 'Cannot start "{target}": no existing file or known PM2 process.',
+  'save.saving': 'Saving PM2 process list...',
+  'logs.title': '{name} logs',
+  'logs.lines': '{count} lines',
+  'config.set': '{key} = {value}',
+  'dashboard.online': 'online',
+  'dashboard.stopped': 'stopped',
+  'dashboard.errored': 'errored',
+  'dashboard.total': 'total',
+  'monitor.load': 'Load',
+  'monitor.history': 'History',
+  'settings.changeTheme': 'Change theme',
+  'settings.changeLanguage': 'Change language',
+  'settings.themeSet': 'Theme set to {theme}. Restart MindPM2 to apply.',
+  'settings.languageSet': 'Language set to {language}.',
 };
 
 export default en;

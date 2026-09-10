@@ -39,12 +39,14 @@ import { runUpdate } from './commands/update.js';
 import { runCleanup } from './commands/cleanup.js';
 import { printSuccess, printWarning, printInfo, printError } from './output.js';
 import { formatEnvEntries } from '../security/sanitizer.js';
+import { t, resetLocale, SUPPORTED_LOCALES } from '../i18n/index.js';
+import { THEME_NAMES } from '../ui/themes.js';
 
 function clearScreen() {
   if (process.stdout.isTTY) process.stdout.write('\u001b[2J\u001b[H');
 }
 
-async function waitForEnter(message = 'Druk op Enter om verder te gaan...') {
+async function waitForEnter(message = t('common.pressEnter')) {
   if (!process.stdin.isTTY) return;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
@@ -71,6 +73,10 @@ function screenTitle(title, subtitle) {
   process.stdout.write(`${header(title, subtitle)}\n\n`);
 }
 
+function stepLabel(current, total) {
+  process.stdout.write(`${theme.dim(t('start.step', { current, total }))}\n\n`);
+}
+
 export async function runInteractive(options = {}) {
   const installed = await isPm2Installed();
 
@@ -80,15 +86,13 @@ export async function runInteractive(options = {}) {
     process.stdout.write(
       `\n${panel(
         undefined,
-        `${theme.error.bold('✖ PM2 could not be found.')}\n\n` +
-          `MindPM2 requires PM2 to be installed.\n\n` +
-          `Install PM2 globally with:\n\n    ${theme.accent('npm install -g pm2')}\n\n` +
-          `Then restart MindPM2.`,
+        `${theme.error.bold(`✖ ${t('error.pm2NotFound')}`)}\n\n` +
+          `${t('error.pm2Required')}\n\n${t('error.pm2InstallHint')}`,
         { borderColor: 'red' }
       )}\n`
     );
-    const action = await selectPrompt('Wat wil je doen?', [
-      { name: 'Open Doctor', value: 'doctor' },
+    const action = await selectPrompt(t('menu.title'), [
+      { name: t('menu.doctor'), value: 'doctor' },
       EXIT_CHOICE,
     ]);
     if (action === 'doctor') await doctorScreen(options);
@@ -102,9 +106,9 @@ export async function runInteractive(options = {}) {
       showLogo();
       first = false;
     } else {
-      screenTitle('Main Menu');
+      screenTitle(t('menu.title'));
     }
-    const choice = await selectPrompt('Main Menu', mainMenuChoices(), { pageSize: 20 });
+    const choice = await selectPrompt(t('menu.title'), mainMenuChoices(), { pageSize: 20 });
 
     if (isBack(choice) || choice === 'exit') break;
 
@@ -139,7 +143,7 @@ export async function runInteractive(options = {}) {
         break;
       case 'cleanup':
         clearScreen();
-        screenTitle('Cleanup');
+        screenTitle(t('screen.cleanup'));
         await guard(() => runCleanup(options));
         await waitForEnter();
         break;
@@ -151,7 +155,7 @@ export async function runInteractive(options = {}) {
         break;
       case 'update':
         clearScreen();
-        screenTitle('Update');
+        screenTitle(t('screen.update'));
         await guard(() => runUpdate(options));
         await waitForEnter();
         break;
@@ -159,7 +163,7 @@ export async function runInteractive(options = {}) {
         break;
     }
   }
-  process.stdout.write(`\n${theme.muted('Tot ziens!')}\n`);
+  process.stdout.write(`\n${theme.muted(t('common.goodbye'))}\n`);
 }
 
 async function dashboardScreen(options) {
@@ -177,10 +181,10 @@ async function dashboardScreen(options) {
     ).length;
     const errored = processes.filter((proc) => proc.status === 'errored').length;
 
-    screenTitle('Dashboard');
+    screenTitle(t('screen.dashboard'));
     process.stdout.write(
       `${dashboardBox({
-        pm2Version: pm2Version ? `v${pm2Version}` : 'not installed',
+        pm2Version: pm2Version ? `v${pm2Version}` : t('info.notInstalled'),
         nodeVersion: process.version,
         platform: `${info.platformLabel} ${info.arch}`,
         hostname: info.hostname,
@@ -199,11 +203,12 @@ async function dashboardScreen(options) {
       })}\n`
     );
 
-    const action = await selectPrompt('Dashboard', [
-      { name: 'Refresh', value: 'refresh' },
+    const action = await selectPrompt(t('screen.dashboard'), [
+      { name: t('common.refresh'), value: 'refresh' },
       BACK_CHOICE,
     ]);
     if (isBack(action)) return;
+    void options;
   }
 }
 
@@ -213,11 +218,11 @@ async function processesScreen(options) {
     const processes = await listProcesses().catch(() => []);
     const online = processes.filter((proc) => proc.status === 'online').length;
     screenTitle(
-      'Processes',
+      t('screen.processes'),
       dotSeparator([
-        `${processes.length} total`,
-        theme.success(`${online} online`),
-        theme.dim(`${processes.length - online} other`),
+        `${processes.length} ${t('common.total')}`,
+        theme.success(`${online} ${t('dashboard.online')}`),
+        theme.dim(`${processes.length - online} ${t('common.other')}`),
       ])
     );
     process.stdout.write(`${processTable(processes)}\n\n`);
@@ -233,7 +238,7 @@ async function processesScreen(options) {
     }));
     choices.push(BACK_CHOICE);
 
-    const selected = await selectPrompt('Selecteer een proces', choices, { pageSize: 20 });
+    const selected = await selectPrompt(t('screen.selectProcess'), choices, { pageSize: 20 });
     if (isBack(selected)) return;
 
     await processActionsScreen(selected, options);
@@ -253,18 +258,22 @@ async function processActionsScreen(identifier, options) {
 
     screenTitle(proc.name, statusBadge(proc.status));
     process.stdout.write(
-      `  ${theme.muted('CPU')} ${theme.text(`${proc.cpu}%`)}   ` +
-        `${theme.muted('RAM')} ${theme.text(formatBytes(proc.memory))}   ` +
-        `${theme.muted('PID')} ${theme.text(proc.pid || '-')}   ` +
-        `${theme.muted('Uptime')} ${theme.text(formatDuration(proc.uptime))}\n`
+      `  ${theme.muted(t('details.cpu'))} ${theme.text(`${proc.cpu}%`)}   ` +
+        `${theme.muted(t('details.memory'))} ${theme.text(formatBytes(proc.memory))}   ` +
+        `${theme.muted(t('details.pid'))} ${theme.text(proc.pid || '-')}   ` +
+        `${theme.muted(t('details.uptime'))} ${theme.text(formatDuration(proc.uptime))}\n`
     );
 
     if (proc.status === 'errored' || proc.restartTime >= 10) {
-      process.stdout.write(`\n  ${theme.warning('⚠')} ${theme.warning(`${proc.name} lijkt onstabiel`)} ${theme.dim(`(${proc.restartTime} restarts)`)}\n`);
+      process.stdout.write(
+        `\n  ${theme.warning('⚠')} ${theme.warning(
+          t('screen.stable.warning', { name: proc.name })
+        )} ${theme.dim(`(${t('screen.restarts', { count: proc.restartTime })})`)}\n`
+      );
     }
     process.stdout.write('\n');
 
-    const choice = await selectPrompt('Acties', processActionChoices(proc));
+    const choice = await selectPrompt(t('screen.actions'), processActionChoices(proc));
 
     if (isBack(choice)) return;
 
@@ -327,15 +336,23 @@ async function showEnvironment(proc, options) {
   const lines = masked
     .map(([key, value]) => `  ${theme.muted(`${key}=`)}${truncate(value, 64)}`)
     .join('\n');
-  process.stdout.write(`${panel(`${proc.name} Environment`, lines || theme.dim('Geen environment variables.'))}\n\n`);
+  process.stdout.write(
+    `${panel(t('details.environment'), lines || theme.dim(t('common.noEnv')))}\n\n`
+  );
 
-  const reveal = await confirmPrompt('Gevoelige waarden tonen?', { default: false });
+  const reveal = await confirmPrompt(t('common.reveal'), { default: false });
   if (reveal === true) {
     clearScreen();
     const revealed = formatEnvEntries(proc.env, { reveal: true })
       .map(([key, value]) => `  ${theme.muted(`${key}=`)}${truncate(value, 64)}`)
       .join('\n');
-    process.stdout.write(`${panel('Environment (revealed)', `${theme.warning('Gevoelige waarden worden getoond.')}\n\n${revealed}`, { borderColor: 'yellow' })}\n`);
+    process.stdout.write(
+      `${panel(
+        t('details.environment'),
+        `${theme.warning(t('common.secretShown'))}\n\n${revealed}`,
+        { borderColor: 'yellow' }
+      )}\n`
+    );
     await waitForEnter();
   }
   void options;
@@ -343,34 +360,36 @@ async function showEnvironment(proc, options) {
 
 async function openWorkingDirectory(cwd) {
   if (!cwd) {
-    printWarning('Geen working directory bekend.');
+    printWarning(t('error.noScript'));
     return;
   }
   const platform = getPlatformModule();
   const openCmd = platform?.getOpenCommand?.(cwd);
   if (!openCmd) {
-    printInfo(`Working directory: ${cwd}`);
+    printInfo(`${t('details.directory')}: ${cwd}`);
     return;
   }
   try {
     const child = spawn(openCmd.command, openCmd.args, { detached: true, stdio: 'ignore' });
     child.unref();
-    printSuccess(`Map geopend: ${cwd}`);
+    printSuccess(`${t('action.openDir')}: ${cwd}`);
   } catch {
-    printInfo(`Working directory: ${cwd}`);
+    printInfo(`${t('details.directory')}: ${cwd}`);
   }
 }
 
 async function startWizard(options) {
+  const TOTAL_STEPS = 4;
   clearScreen();
-  screenTitle('Start Application');
+  screenTitle(t('screen.start'));
+  stepLabel(1, TOTAL_STEPS);
 
-  const type = await selectPrompt('Application type:', [
-    { name: 'JavaScript file', value: 'javascript' },
-    { name: 'NPM script', value: 'npm' },
-    { name: 'Ecosystem file', value: 'ecosystem' },
-    { name: 'Existing process', value: 'existing' },
-    { name: 'Custom command', value: 'command' },
+  const type = await selectPrompt(t('start.type'), [
+    { name: t('start.type.javascript'), value: 'javascript' },
+    { name: t('start.type.npm'), value: 'npm' },
+    { name: t('start.type.ecosystem'), value: 'ecosystem' },
+    { name: t('start.type.existing'), value: 'existing' },
+    { name: t('start.type.command'), value: 'command' },
     BACK_CHOICE,
   ]);
   if (isBack(type)) return;
@@ -378,12 +397,12 @@ async function startWizard(options) {
   const startOptions = { ...options, yes: options.yes };
 
   if (type === 'ecosystem') {
-    const file = await inputPrompt('Ecosystem bestand:', { default: 'ecosystem.config.cjs' });
+    const file = await inputPrompt(t('start.ecosystemFile'), { default: 'ecosystem.config.cjs' });
     if (isBack(file)) return;
     await guard(async () => {
       const { start } = await import('../pm2/ecosystem.js');
       await start(file);
-      printSuccess('Ecosystem gestart.');
+      printSuccess(t('start.ecosystemStarted'));
     });
     await waitForEnter();
     return;
@@ -392,12 +411,12 @@ async function startWizard(options) {
   if (type === 'existing') {
     const processes = await listProcesses().catch(() => []);
     if (processes.length === 0) {
-      printWarning('Geen bestaande processen.');
+      printWarning(t('start.noExisting'));
       await waitForEnter();
       return;
     }
     const name = await selectPrompt(
-      'Selecteer proces:',
+      t('screen.selectProcess'),
       processes.map((proc) => ({ name: proc.name, value: proc.name })).concat([BACK_CHOICE])
     );
     if (isBack(name)) return;
@@ -408,42 +427,41 @@ async function startWizard(options) {
     return;
   }
 
+  stepLabel(2, TOTAL_STEPS);
   let target;
   if (type === 'javascript') {
-    target = await inputPrompt('Path naar script:', { default: 'index.js' });
-    if (isBack(target)) return;
+    target = await inputPrompt(t('start.path'), { default: 'index.js' });
   } else if (type === 'npm') {
-    target = await inputPrompt('Pad naar package.json map:', { default: process.cwd() });
-    if (isBack(target)) return;
+    target = await inputPrompt(t('start.npmDir'), { default: process.cwd() });
   } else {
-    target = await inputPrompt('Commando:', { default: '' });
-    if (isBack(target)) return;
+    target = await inputPrompt(t('start.command'), { default: '' });
   }
+  if (isBack(target)) return;
 
-  const name = await inputPrompt('Application name:', { default: '' });
+  stepLabel(3, TOTAL_STEPS);
+  const name = await inputPrompt(t('start.name'), { default: '' });
   if (isBack(name)) return;
 
-  const instances = await inputPrompt('Instances:', { default: '1' });
+  const instances = await inputPrompt(t('start.instances'), { default: '1' });
   if (isBack(instances)) return;
 
-  const mode = await selectPrompt('Execution mode:', [
+  const mode = await selectPrompt(t('start.mode'), [
     { name: 'fork', value: 'fork' },
     { name: 'cluster', value: 'cluster' },
   ]);
   if (isBack(mode)) return;
 
-  const watch = await confirmPrompt('Watch mode?', { default: false });
+  const watch = await confirmPrompt(t('start.watch'), { default: false });
   if (isBack(watch)) return;
 
-  const maxMemory = await inputPrompt('Max memory restart (leeg = geen):', { default: '' });
+  const maxMemory = await inputPrompt(t('start.maxMemory'), { default: '' });
   if (isBack(maxMemory)) return;
 
-  const envInput = await inputPrompt('Environment (KEY=VALUE, komma-gescheiden, leeg = geen):', {
-    default: '',
-  });
+  stepLabel(4, TOTAL_STEPS);
+  const envInput = await inputPrompt(t('start.env'), { default: '' });
   if (isBack(envInput)) return;
 
-  const args = await inputPrompt('Arguments (leeg = geen):', { default: '' });
+  const args = await inputPrompt(t('start.args'), { default: '' });
   if (isBack(args)) return;
 
   const envList = envInput
@@ -454,25 +472,25 @@ async function startWizard(options) {
     : [];
 
   const rows = [
-    ['Type', type],
+    [t('start.type'), type],
     ['Target', target],
-    ['Name', name || theme.dim('(auto)')],
-    ['Instances', instances],
-    ['Mode', mode],
-    ['Watch', watch ? theme.success('enabled') : theme.dim('disabled')],
-    ['Max memory', maxMemory || theme.dim('-')],
-    ['Arguments', args || theme.dim('-')],
+    [t('start.name'), name || theme.dim(t('start.auto'))],
+    [t('start.instances'), instances],
+    [t('start.mode'), mode],
+    [t('start.watch'), watch ? theme.success(t('details.enabled')) : theme.dim(t('details.disabled'))],
+    [t('start.maxMemory'), maxMemory || theme.dim('-')],
+    [t('start.args'), args || theme.dim('-')],
   ];
 
   process.stdout.write('\n');
   process.stdout.write(
     `${panel(
-      'Start Application',
-      rows.map(([key, value]) => `  ${theme.muted(String(key).padEnd(12))}${value}`).join('\n')
+      t('start.summary'),
+      rows.map(([key, value]) => `  ${theme.muted(String(key).padEnd(18))}${value}`).join('\n')
     )}\n`
   );
 
-  const confirmed = await confirmPrompt('Start application?', { default: true });
+  const confirmed = await confirmPrompt(t('start.confirm'), { default: true });
   if (confirmed !== true) return;
 
   await guard(async () => {
@@ -496,24 +514,24 @@ async function startWizard(options) {
 async function logsScreen(options) {
   while (true) {
     clearScreen();
-    screenTitle('Logs');
-    const choice = await selectPrompt('Logs', logsMenuChoices());
+    screenTitle(t('screen.logs'));
+    const choice = await selectPrompt(t('screen.logs'), logsMenuChoices());
     if (isBack(choice)) return;
 
     if (choice === 'process') {
       const processes = await listProcesses().catch(() => []);
       if (processes.length === 0) {
-        printWarning('Geen processen.');
+        printWarning(t('list.empty'));
         await waitForEnter();
         continue;
       }
       const name = await selectPrompt(
-        'Selecteer proces:',
+        t('screen.selectProcess'),
         processes.map((proc) => ({ name: proc.name, value: proc.name })).concat([BACK_CHOICE])
       );
       if (isBack(name)) continue;
       clearScreen();
-      screenTitle('Logs', name);
+      screenTitle(t('screen.logs'), name);
       await guard(() => runLogs(name, { lines: 50 }));
       await waitForEnter();
       continue;
@@ -522,20 +540,20 @@ async function logsScreen(options) {
     if (choice === 'live') {
       const processes = await listProcesses().catch(() => []);
       const name = await selectPrompt(
-        'Live logs van:',
-        [{ name: 'All Processes', value: null }]
+        t('logs.liveOf'),
+        [{ name: t('logs.all'), value: null }]
           .concat(processes.map((proc) => ({ name: proc.name, value: proc.name })))
           .concat([BACK_CHOICE])
       );
       if (isBack(name)) continue;
       clearScreen();
-      printInfo('Live logs gestart. Druk op CTRL+C of Q om te stoppen.');
+      printInfo(t('logs.liveStarted'));
       await guard(() => runLogs(name, { live: true, lines: 15 }));
       continue;
     }
 
     clearScreen();
-    screenTitle('Logs');
+    screenTitle(t('screen.logs'));
     await guard(async () => {
       switch (choice) {
         case 'all':
@@ -565,24 +583,27 @@ async function logsScreen(options) {
 async function saveRestoreScreen(options) {
   while (true) {
     clearScreen();
-    screenTitle('Save / Restore');
-    const choice = await selectPrompt('Save / Restore', saveRestoreChoices());
+    screenTitle(t('screen.save'));
+    const choice = await selectPrompt(t('screen.save'), saveRestoreChoices());
     if (isBack(choice)) return;
 
     if (choice === 'show') {
       const dump = getPm2DumpPath();
       if (!fileExists(dump)) {
-        printWarning('Nog geen opgeslagen configuratie gevonden. Gebruik eerst "Save current processes".');
+        printWarning(t('restore.noSaved'));
       } else {
         try {
           const fs = await import('node:fs');
           const data = JSON.parse(fs.readFileSync(dump, 'utf8'));
-          const apps = (data.apps ?? []).map((app) => `  ${theme.muted('•')} ${app.name ?? 'unnamed'}`);
+          const apps = (data.apps ?? []).map((app) => `  ${theme.muted('•')} ${app.name ?? t('common.unknown')}`);
           process.stdout.write(
-            `${panel('Saved configuration', `${theme.dim(dump)}\n\n${apps.join('\n')}`)}\n`
+            `${panel(
+              t('save.menu.show'),
+              `${theme.dim(t('restore.dumpFile', { path: dump }))}\n\n${t('restore.savedApps')}\n${apps.join('\n')}`
+            )}\n`
           );
         } catch {
-          printWarning('Kon dump bestand niet lezen.');
+          printWarning(t('restore.cantRead'));
         }
       }
       await waitForEnter();
@@ -600,16 +621,18 @@ async function saveRestoreScreen(options) {
 async function startupScreen(options) {
   while (true) {
     clearScreen();
-    screenTitle('Startup');
-    const choice = await selectPrompt('Startup', startupChoices());
+    screenTitle(t('screen.startup'));
+    const choice = await selectPrompt(t('screen.startup'), startupChoices());
     if (isBack(choice)) return;
 
     if (choice === 'service') {
       const running = await isDaemonRunning();
       process.stdout.write(
         `${panel(
-          'Service Status',
-          `  ${theme.muted('PM2 daemon')}  ${running ? theme.success('running') : theme.warning('not running')}`
+          t('startup.menu.service'),
+          `  ${theme.muted(t('info.pm2'))}  ${
+            running ? theme.success(t('startup.running')) : theme.warning(t('startup.notRunning'))
+          }`
         )}\n`
       );
       await waitForEnter();
@@ -628,13 +651,13 @@ async function startupScreen(options) {
 async function ecosystemScreen(options) {
   while (true) {
     clearScreen();
-    screenTitle('Ecosystem');
-    const choice = await selectPrompt('Ecosystem', ecosystemChoices());
+    screenTitle(t('screen.ecosystem'));
+    const choice = await selectPrompt(t('screen.ecosystem'), ecosystemChoices());
     if (isBack(choice)) return;
 
     await guard(async () => {
       if (choice === 'create') {
-        const name = await inputPrompt('Bestandsnaam:', { default: 'ecosystem.config.cjs' });
+        const name = await inputPrompt(t('eco.filename'), { default: 'ecosystem.config.cjs' });
         if (isBack(name)) return;
         await runEcosystem('create', name, options);
         return;
@@ -648,10 +671,10 @@ async function ecosystemScreen(options) {
 async function serverScreen(options) {
   while (true) {
     clearScreen();
-    screenTitle('Server Information');
+    screenTitle(t('screen.server'));
     await guard(() => runInfo(options));
-    const action = await selectPrompt('Server Information', [
-      { name: 'Refresh', value: 'refresh' },
+    const action = await selectPrompt(t('screen.server'), [
+      { name: t('common.refresh'), value: 'refresh' },
       BACK_CHOICE,
     ]);
     if (isBack(action)) return;
@@ -661,14 +684,39 @@ async function serverScreen(options) {
 async function settingsScreen(options) {
   while (true) {
     clearScreen();
-    screenTitle('Settings');
-    const choice = await selectPrompt('Settings', settingsChoices());
+    screenTitle(t('screen.settings'));
+    const choice = await selectPrompt(t('screen.settings'), settingsChoices());
     if (isBack(choice)) return;
 
     if (choice === 'show') {
       clearScreen();
-      screenTitle('Settings', 'Configuration');
+      screenTitle(t('screen.settings'), t('config.title'));
       await runConfig('show');
+      await waitForEnter();
+      continue;
+    }
+
+    if (choice === 'theme') {
+      const themeChoice = await selectPrompt(
+        t('settings.changeTheme'),
+        THEME_NAMES.map((name) => ({ name, value: name })).concat([BACK_CHOICE])
+      );
+      if (isBack(themeChoice)) continue;
+      await guard(() => runConfig('set', 'theme', themeChoice));
+      printInfo(t('settings.themeSet', { theme: themeChoice }));
+      await waitForEnter();
+      continue;
+    }
+
+    if (choice === 'language') {
+      const languageChoice = await selectPrompt(
+        t('settings.changeLanguage'),
+        SUPPORTED_LOCALES.map((name) => ({ name, value: name })).concat([BACK_CHOICE])
+      );
+      if (isBack(languageChoice)) continue;
+      await guard(() => runConfig('set', 'language', languageChoice));
+      resetLocale();
+      printInfo(t('settings.languageSet', { language: languageChoice }));
       await waitForEnter();
       continue;
     }
@@ -683,7 +731,7 @@ async function settingsScreen(options) {
 
 async function doctorScreen(options) {
   clearScreen();
-  screenTitle('Doctor');
+  screenTitle(t('screen.doctor'));
   await guard(() => runDoctor(options));
   await waitForEnter();
 }

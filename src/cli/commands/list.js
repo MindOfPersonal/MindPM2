@@ -3,6 +3,7 @@ import { printProcesses, printJson } from '../output.js';
 import { sortProcesses } from './helpers.js';
 import { theme } from '../../ui/colors.js';
 import { processTable } from '../../ui/tables.js';
+import { t } from '../../i18n/index.js';
 
 export async function runList(target, options = {}) {
   if (target) {
@@ -32,9 +33,7 @@ export async function runList(target, options = {}) {
   process.stdout.write(`${processTable(processes)}\n`);
   if (processes.length > 0) {
     const online = processes.filter((proc) => proc.status === 'online').length;
-    process.stdout.write(
-      theme.muted(`\n${processes.length} processes  •  ${online} online\n`)
-    );
+    process.stdout.write(theme.muted(`\n${t('list.summary', { total: processes.length, online })}\n`));
   }
   return processes;
 }

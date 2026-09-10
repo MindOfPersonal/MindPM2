@@ -5,6 +5,7 @@ import { getDiskInfo } from '../../system/disk.js';
 import { theme } from '../../ui/colors.js';
 import { monitorBox } from '../../ui/boxes.js';
 import { printJson } from '../output.js';
+import { t } from '../../i18n/index.js';
 
 export async function collectMonitorData() {
   const [cpu, processes, disk] = await Promise.all([
@@ -17,9 +18,10 @@ export async function collectMonitorData() {
 }
 
 export function renderMonitorFrame(data, options = {}) {
-  const footer = options.autoRefresh === false
-    ? theme.dim('  [Q] Stoppen')
-    : theme.dim(`  [Q] Stoppen   •   interval ${options.interval ?? 2000}ms`);
+  const footer =
+    options.autoRefresh === false
+      ? theme.dim(`  ${t('monitor.stop')}`)
+      : theme.dim(`  ${t('monitor.stop')}   •   ${t('monitor.interval', { ms: options.interval ?? 2000 })}`);
   return `${monitorBox(data)}\n${footer}`;
 }
 
@@ -73,8 +75,12 @@ export async function runMonitor(options = {}) {
   process.on('SIGINT', onSigint);
 
   try {
+    const history = [];
     while (running) {
       const data = await collectMonitorData();
+      history.push(data.cpu);
+      if (history.length > 40) history.shift();
+      data.history = [...history];
       if (options.clear !== false) process.stdout.write('\u001b[2J\u001b[H');
       process.stdout.write(`${renderMonitorFrame(data, { ...options, interval })}\n`);
       const waited = await waitWithStop(interval, () => running);

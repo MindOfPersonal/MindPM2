@@ -1,6 +1,7 @@
 import { theme, statusBadge, percent } from './colors.js';
 import { formatBytes } from '../system/memory.js';
 import { visibleWidth, padLeft, padRight, stripAnsi } from './screen.js';
+import { t } from '../i18n/index.js';
 
 export function formatDuration(ms) {
   const total = Math.floor((Number(ms) || 0) / 1000);
@@ -50,7 +51,17 @@ export function renderTable({ headers, rows, aligns = [], gap = 2, indent = 2 })
 
 export function processTable(processes, options = {}) {
   const nameWidth = options.nameWidth ?? 26;
-  const headers = ['ID', 'NAME', 'MODE', 'STATUS', 'CPU', 'MEMORY', 'RESTARTS', 'UPTIME', 'PID'];
+  const headers = [
+    t('table.id'),
+    t('table.name'),
+    t('table.mode'),
+    t('table.status'),
+    t('table.cpu'),
+    t('table.memory'),
+    t('table.restarts'),
+    t('table.uptime'),
+    t('table.pid'),
+  ].map((label) => label.toUpperCase());
   const rows = processes.map((proc) => [
     String(proc.id),
     truncate(proc.name, nameWidth),
@@ -64,7 +75,7 @@ export function processTable(processes, options = {}) {
   ]);
 
   if (processes.length === 0 && !options.hideEmpty) {
-    return theme.dim('  Geen PM2-processen gevonden.');
+    return theme.dim(`  ${t('list.empty')}`);
   }
 
   return renderTable({

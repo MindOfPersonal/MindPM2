@@ -37,7 +37,7 @@ test('--version shows MindPM2 version', () => {
 test('version command shows environment', () => {
   const { clean, code } = run(['version']);
   assert.equal(code, 0);
-  assert.match(clean, /Node\.js/);
+  assert.match(clean, /Node/);
   assert.match(clean, /Platform/);
 });
 
@@ -60,7 +60,7 @@ test('--help lists commands', () => {
 test('unknown command fails with exit code 2', () => {
   const { code, clean } = run(['definitely-not-a-command']);
   assert.equal(code, 2);
-  assert.match(clean, /Onbekend commando/);
+  assert.match(clean, /Unknown command|Onbekend commando/);
 });
 
 test('doctor --json returns checks', () => {
