@@ -2,41 +2,55 @@ import chalk from 'chalk';
 import { loadConfig } from '../config/manager.js';
 import { getThemeDefinition } from './themes.js';
 
-const activeThemeName = (() => {
+function detectThemeName() {
   try {
     return loadConfig().theme ?? 'default';
   } catch {
     return 'default';
   }
-})();
+}
 
-const definition = getThemeDefinition(activeThemeName);
-export const palette = definition.palette;
-export const activeTheme = activeThemeName;
+function buildTheme(p) {
+  return {
+    primary: chalk.hex(p.primary),
+    primaryBold: chalk.hex(p.primary).bold,
+    primarySoft: chalk.hex(p.primarySoft),
+    accent: chalk.hex(p.accent),
+    accentBold: chalk.hex(p.accent).bold,
+    success: chalk.hex(p.success),
+    successBold: chalk.hex(p.success).bold,
+    warning: chalk.hex(p.warning),
+    warningBold: chalk.hex(p.warning).bold,
+    error: chalk.hex(p.error),
+    errorBold: chalk.hex(p.error).bold,
+    info: chalk.hex(p.info),
+    purple: chalk.hex(p.purple),
+    muted: chalk.hex(p.muted),
+    dim: chalk.hex(p.dim),
+    text: chalk.hex(p.text),
+    title: chalk.hex(p.white).bold,
+    bold: chalk.bold,
+    italic: chalk.italic,
+  };
+}
 
-export const theme = {
-  primary: chalk.hex(palette.primary),
-  primaryBold: chalk.hex(palette.primary).bold,
-  primarySoft: chalk.hex(palette.primarySoft),
-  accent: chalk.hex(palette.accent),
-  accentBold: chalk.hex(palette.accent).bold,
-  success: chalk.hex(palette.success),
-  successBold: chalk.hex(palette.success).bold,
-  warning: chalk.hex(palette.warning),
-  warningBold: chalk.hex(palette.warning).bold,
-  error: chalk.hex(palette.error),
-  errorBold: chalk.hex(palette.error).bold,
-  info: chalk.hex(palette.info),
-  purple: chalk.hex(palette.purple),
-  muted: chalk.hex(palette.muted),
-  dim: chalk.hex(palette.dim),
-  text: chalk.hex(palette.text),
-  title: chalk.hex(palette.white).bold,
-  bold: chalk.bold,
-  italic: chalk.italic,
-};
+export let activeTheme = detectThemeName();
+let definition = getThemeDefinition(activeTheme);
+export const palette = { ...definition.palette };
+export const theme = buildTheme(palette);
+export let BORDER = definition.border;
 
-export const BORDER = definition.border;
+export function reloadTheme(name) {
+  const next = getThemeDefinition(name);
+  activeTheme = name;
+  definition = next;
+  BORDER = next.border;
+  Object.assign(palette, next.palette);
+  const rebuilt = buildTheme(palette);
+  for (const key of Object.keys(theme)) delete theme[key];
+  Object.assign(theme, rebuilt);
+  return theme;
+}
 export const BORDER_SUCCESS = 'green';
 export const BORDER_WARNING = 'yellow';
 export const BORDER_ERROR = 'red';
@@ -47,24 +61,30 @@ export const ICONS = {
   warn: '⚠',
   info: 'ℹ',
   bullet: '•',
+  middot: '·',
   arrow: '›',
+  chevron: '›',
   pointer: '❯',
+  brand: '◆',
   dot: '●',
+  dotOnline: '●',
+  dotStopped: '○',
+  dotError: '✖',
   clock: '◐',
   spark: '✦',
 };
 
 export const STATUS_META = {
-  online: { icon: '✔', color: theme.success, label: 'online' },
-  stopped: { icon: '●', color: theme.dim, label: 'stopped' },
-  stopped_gracefully: { icon: '●', color: theme.dim, label: 'stopped' },
-  errored: { icon: '✖', color: theme.error, label: 'errored' },
-  launching: { icon: '◐', color: theme.accent, label: 'launching' },
-  'one-launch-status': { icon: '◐', color: theme.accent, label: 'launching' },
-  'waiting restart': { icon: '⚠', color: theme.warning, label: 'waiting' },
-  'online*': { icon: '⚠', color: theme.warning, label: 'unstable' },
-  unstable: { icon: '⚠', color: theme.warning, label: 'unstable' },
-  deleting: { icon: '●', color: theme.error, label: 'deleting' },
+  online: { icon: ICONS.dotOnline, color: theme.success, label: 'online' },
+  stopped: { icon: ICONS.dotStopped, color: theme.dim, label: 'stopped' },
+  stopped_gracefully: { icon: ICONS.dotStopped, color: theme.dim, label: 'stopped' },
+  errored: { icon: ICONS.dotError, color: theme.error, label: 'errored' },
+  launching: { icon: ICONS.clock, color: theme.accent, label: 'launching' },
+  'one-launch-status': { icon: ICONS.clock, color: theme.accent, label: 'launching' },
+  'waiting restart': { icon: ICONS.warn, color: theme.warning, label: 'waiting' },
+  'online*': { icon: ICONS.warn, color: theme.warning, label: 'unstable' },
+  unstable: { icon: ICONS.warn, color: theme.warning, label: 'unstable' },
+  deleting: { icon: ICONS.dot, color: theme.error, label: 'deleting' },
   unknown: { icon: '?', color: theme.dim, label: 'unknown' },
 };
 

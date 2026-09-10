@@ -45,12 +45,16 @@ export async function runStart(target, options = {}) {
   const normalized = normalizeOptions(options);
 
   if (!target) {
-    if (options.command) {
+    if (typeof options.command === 'string' && options.command) {
       return runWithSpinner(() =>
         startApplication({ type: 'command', command: options.command, ...normalized })
       );
     }
     throw new InvalidInputError(t('start.noTarget'));
+  }
+
+  if (String(target).trim().toLowerCase() === 'all') {
+    return runWithSpinner(() => startExisting('all'), t('action.startedAll'));
   }
 
   if (existingFile(target) && isEcosystemPath(target)) {

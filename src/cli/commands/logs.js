@@ -9,6 +9,7 @@ import {
 import { printJson, printSuccess, printInfo } from '../output.js';
 import { theme } from '../../ui/colors.js';
 import { confirmDangerous } from './helpers.js';
+import { loadConfig } from '../../config/manager.js';
 import { t } from '../../i18n/index.js';
 
 function renderLines(lines, color) {
@@ -55,14 +56,14 @@ export async function runLogs(target, options = {}) {
   if (options.live) {
     printInfo(t('logs.liveStarted'));
     await streamLogsToConsole(target, {
-      lines: options.lines ?? 15,
+      lines: options.lines ?? loadConfig().logLines ?? 15,
       errOnly: options.err,
       outOnly: options.out,
     });
     return { streamed: true };
   }
 
-  const lines = options.lines ?? 50;
+  const lines = options.lines ?? loadConfig().logLines ?? 50;
 
   if (target) {
     const { process: proc, out, err } = await readProcessLogs(target, { lines });

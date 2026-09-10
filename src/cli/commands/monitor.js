@@ -5,6 +5,7 @@ import { getDiskInfo } from '../../system/disk.js';
 import { theme } from '../../ui/colors.js';
 import { monitorBox } from '../../ui/boxes.js';
 import { printJson } from '../output.js';
+import { loadConfig } from '../../config/manager.js';
 import { t } from '../../i18n/index.js';
 
 export async function collectMonitorData() {
@@ -26,7 +27,7 @@ export function renderMonitorFrame(data, options = {}) {
 }
 
 export async function runMonitor(options = {}) {
-  const interval = options.interval ?? 2000;
+  const interval = options.interval ?? loadConfig().monitorInterval ?? 2000;
 
   if (options.json || options.once) {
     const data = await collectMonitorData();

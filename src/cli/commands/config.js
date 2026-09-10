@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { spawn } from 'node:child_process';
 import { loadConfig, saveConfig, resetConfig, clearCache } from '../../config/manager.js';
 import { printSuccess, printJson } from '../output.js';
-import { theme } from '../../ui/colors.js';
+import { theme, reloadTheme } from '../../ui/colors.js';
 import { InvalidInputError } from '../../utils/errors.js';
 import { ensureDir, getMindPM2Home, getConfigPath } from '../../utils/paths.js';
 import { confirmDangerous } from './helpers.js';
@@ -72,6 +72,7 @@ function setKey(key, rawValue, options = {}) {
   const value = coerce(rawValue);
   const updated = saveConfig({ ...config, [key]: value });
   clearCache();
+  if (key === 'theme') reloadTheme(value);
   if (!options.json) printSuccess(t('config.set', { key, value: updated[key] }));
   return updated[key];
 }
@@ -81,6 +82,7 @@ async function reset(options = {}) {
   if (!ok) return { cancelled: true };
   resetConfig();
   clearCache();
+  reloadTheme(loadConfig().theme);
   printSuccess(t('config.resetDone'));
   return true;
 }

@@ -1,6 +1,6 @@
 {
   "name": "mindpm2",
-  "version": "1.0.0",
+  "version": "1.1.2",
   "description": "A powerful interactive PM2 management CLI for Node.js servers.",
   "type": "module",
   "bin": {

@@ -110,11 +110,11 @@ mindpm2 startup
 | `mindpm2 list [target]` | List PM2 processes (`--sort`, `--status`, `--json`) |
 | `mindpm2 status [target]` | Alias for `list` |
 | `mindpm2 start [target]` | Start a script, process, NPM script or ecosystem file |
-| `mindpm2 stop <target>` | Stop a process |
-| `mindpm2 restart <target>` | Restart a process |
-| `mindpm2 reload <target>` | Zero-downtime reload |
-| `mindpm2 delete <target>` | Delete a process |
-| `mindpm2 reset <target>` | Reset restart/uptime counters |
+| `mindpm2 stop <target>` | Stop a process (use `all` for every process) |
+| `mindpm2 restart <target>` | Restart a process (use `all` for every process) |
+| `mindpm2 reload <target>` | Zero-downtime reload (use `all` for every process) |
+| `mindpm2 delete <target>` | Delete a process (use `all` for every process) |
+| `mindpm2 reset <target>` | Reset restart/uptime counters (use `all` for every process) |
 | `mindpm2 scale <target> <n>` | Scale a process to `n` instances |
 | `mindpm2 logs [target]` | Show logs (`--live`, `--err`, `--out`, `--lines`, `--clear`, `--files`) |
 | `mindpm2 save` | Save the PM2 process list |

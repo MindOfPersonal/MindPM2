@@ -1,7 +1,7 @@
 import { InvalidInputError } from '../utils/errors.js';
 import { t } from '../i18n/index.js';
 
-const PROCESS_ID_PATTERN = /^[A-Za-z0-9._@:/-]+$/;
+const PROCESS_ID_PATTERN = /^[A-Za-z0-9 ._@:+/-]+$/;
 const MEMORY_PATTERN = /^\d+(\.\d+)?\s?(B|K|KB|M|MB|G|GB)?$/i;
 
 export function isValidProcessId(value) {

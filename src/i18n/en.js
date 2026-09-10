@@ -6,6 +6,8 @@ export const en = {
   'common.yes': 'Yes',
   'common.no': 'No',
   'common.refresh': 'Refresh',
+  'common.search': 'Search',
+  'common.sort': 'Sort',
   'common.pressEnter': 'Press Enter to continue...',
   'common.cancelled': 'Cancelled.',
   'common.done': 'Done.',
@@ -27,9 +29,10 @@ export const en = {
   'error.processListHint': 'Use "mindpm2 list" to see available processes.',
   'error.noProcess': 'No process specified.',
   'error.invalidProcess':
-    'Invalid process name or ID: "{input}". Use only letters, numbers and . _ - / : @',
+    'Invalid process name or ID: "{input}". Use only letters, numbers, spaces and . _ - / : @',
   'error.invalidMemory': 'Invalid memory value: "{input}". Example: 500M, 1G, 256K',
   'error.invalidInstances': 'Invalid instance count: "{input}". Use 1-128 or "max".',
+  'error.scaleAll': 'Cannot scale all processes at once.',
   'error.invalidPort': 'Invalid port: "{input}".',
   'error.noScript': 'No script or application path specified.',
   'error.invalidPath': 'Path does not exist or is not accessible: {path}',
@@ -79,6 +82,7 @@ export const en = {
   'screen.update': 'Update',
   'screen.selectProcess': 'Select a process',
   'screen.actions': 'Actions',
+  'screen.bulk': 'All Processes',
   'screen.stable.warning': '{name} appears to be unstable',
   'screen.restarts': '{count} restarts',
 
@@ -112,10 +116,34 @@ export const en = {
   'action.confirmStop': 'Stop "{name}"?',
   'action.confirmDelete': 'Delete "{name}"? This cannot be undone through MindPM2.',
   'action.confirmReset': 'Reset "{name}"?',
+  'action.bulk': 'All processes…',
+  'action.startAll': 'Start all',
+  'action.restartAll': 'Restart all',
+  'action.reloadAll': 'Reload all',
+  'action.stopAll': 'Stop all',
+  'action.deleteAll': 'Delete all',
+  'action.startedAll': 'All processes started.',
+  'action.stoppedAll': 'All processes stopped.',
+  'action.restartedAll': 'All processes restarted.',
+  'action.reloadedAll': 'All processes reloaded.',
+  'action.deletedAll': 'All processes deleted.',
+  'action.resetAll': 'All processes reset.',
+  'action.startingAll': 'Starting all processes...',
+  'action.stoppingAll': 'Stopping all processes...',
+  'action.restartingAll': 'Restarting all processes...',
+  'action.reloadingAll': 'Reloading all processes...',
+  'action.deletingAll': 'Deleting all processes...',
+  'action.resettingAll': 'Resetting all processes...',
+  'action.confirmDeleteAll': 'Delete ALL processes? This cannot be undone through MindPM2.',
+  'action.confirmResetAll': 'Reset ALL processes?',
 
   // List
   'list.empty': 'No PM2 processes found.',
   'list.summary': '{total} processes  •  {online} online',
+  'list.sortedBy': 'sorted by {field}',
+  'list.searchPrompt': 'Search process by name or ID',
+  'list.sortBy': 'Sort processes by',
+  'list.noMatches': 'No processes match "{query}".',
 
   // Start
   'start.type': 'Application type',
@@ -341,7 +369,8 @@ export const en = {
   'update.upToDate': 'MindPM2 is up to date (v{version}).',
 
   // Version
-  'version.title': 'MindPM2',
+  'version.title': 'Version',
+  'version.app': 'MindPM2',
 
   // Monitor
   'monitor.stop': '[Q] Stop',

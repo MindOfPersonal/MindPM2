@@ -6,6 +6,8 @@ export const nl = {
   'common.yes': 'Ja',
   'common.no': 'Nee',
   'common.refresh': 'Vernieuwen',
+  'common.search': 'Zoeken',
+  'common.sort': 'Sorteren',
   'common.pressEnter': 'Druk op Enter om verder te gaan...',
   'common.cancelled': 'Geannuleerd.',
   'common.done': 'Klaar.',
@@ -28,9 +30,10 @@ export const nl = {
   'error.processListHint': 'Gebruik "mindpm2 list" om beschikbare processen te bekijken.',
   'error.noProcess': 'Geen proces opgegeven.',
   'error.invalidProcess':
-    'Ongeldige procesnaam of ID: "{input}". Gebruik alleen letters, cijfers en . _ - / : @',
+    'Ongeldige procesnaam of ID: "{input}". Gebruik alleen letters, cijfers, spaties en . _ - / : @',
   'error.invalidMemory': 'Ongeldige geheugenwaarde: "{input}". Voorbeeld: 500M, 1G, 256K',
   'error.invalidInstances': 'Ongeldig aantal instances: "{input}". Gebruik 1-128 of "max".',
+  'error.scaleAll': 'Alle processen tegelijk schalen kan niet.',
   'error.invalidPort': 'Ongeldige poort: "{input}".',
   'error.noScript': 'Geen script- of applicatiepad opgegeven.',
   'error.invalidPath': 'Pad bestaat niet of is niet toegankelijk: {path}',
@@ -80,6 +83,7 @@ export const nl = {
   'screen.update': 'Bijwerken',
   'screen.selectProcess': 'Selecteer een proces',
   'screen.actions': 'Acties',
+  'screen.bulk': 'Alle processen',
   'screen.stable.warning': '{name} lijkt onstabiel',
   'screen.restarts': '{count} restarts',
 
@@ -113,10 +117,34 @@ export const nl = {
   'action.confirmStop': '"{name}" stoppen?',
   'action.confirmDelete': '"{name}" verwijderen? Dit kan niet ongedaan worden gemaakt via MindPM2.',
   'action.confirmReset': '"{name}" resetten?',
+  'action.bulk': 'Alle processen…',
+  'action.startAll': 'Alles starten',
+  'action.restartAll': 'Alles herstarten',
+  'action.reloadAll': 'Alles herladen',
+  'action.stopAll': 'Alles stoppen',
+  'action.deleteAll': 'Alles verwijderen',
+  'action.startedAll': 'Alle processen gestart.',
+  'action.stoppedAll': 'Alle processen gestopt.',
+  'action.restartedAll': 'Alle processen herstart.',
+  'action.reloadedAll': 'Alle processen herladen.',
+  'action.deletedAll': 'Alle processen verwijderd.',
+  'action.resetAll': 'Alle processen gereset.',
+  'action.startingAll': 'Alle processen starten...',
+  'action.stoppingAll': 'Alle processen stoppen...',
+  'action.restartingAll': 'Alle processen herstarten...',
+  'action.reloadingAll': 'Alle processen herladen...',
+  'action.deletingAll': 'Alle processen verwijderen...',
+  'action.resettingAll': 'Alle processen resetten...',
+  'action.confirmDeleteAll': 'ALLE processen verwijderen? Dit kan niet ongedaan worden gemaakt via MindPM2.',
+  'action.confirmResetAll': 'ALLE processen resetten?',
 
   // List
   'list.empty': 'Geen PM2-processen gevonden.',
   'list.summary': '{total} processen  •  {online} online',
+  'list.sortedBy': 'gesorteerd op {field}',
+  'list.searchPrompt': 'Zoek proces op naam of ID',
+  'list.sortBy': 'Sorteer processen op',
+  'list.noMatches': 'Geen processen gevonden voor "{query}".',
 
   // Start
   'start.type': 'Applicatietype',
@@ -342,7 +370,8 @@ export const nl = {
   'update.upToDate': 'MindPM2 is up-to-date (v{version}).',
 
   // Version
-  'version.title': 'MindPM2',
+  'version.title': 'Versie',
+  'version.app': 'MindPM2',
 
   // Monitor
   'monitor.stop': '[Q] Stoppen',

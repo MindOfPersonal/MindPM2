@@ -34,7 +34,7 @@ export async function runVersion(options = {}) {
     `${panel(
       t('version.title'),
       keyValue([
-        [t('version.title'), `v${data.mindpm2}`],
+        [t('version.app'), `v${data.mindpm2}`],
         [t('info.node'), data.node],
         [t('info.pm2'), data.pm2 ? `v${data.pm2}` : theme.warning(t('info.notInstalled'))],
         [t('startup.platform'), data.platform],

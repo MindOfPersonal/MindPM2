@@ -22,6 +22,11 @@ test('validateProcessIdentifier accepts names and ids', () => {
   assert.equal(validateProcessIdentifier('my-app_1.2'), 'my-app_1.2');
 });
 
+test('validateProcessIdentifier accepts names containing spaces', () => {
+  assert.equal(validateProcessIdentifier('MindGit - Agent'), 'MindGit - Agent');
+  assert.equal(validateProcessIdentifier('  MindDB - Dev  '), 'MindDB - Dev');
+});
+
 test('validateProcessIdentifier rejects dangerous input', () => {
   assert.throws(() => validateProcessIdentifier('foo; rm -rf /'), InvalidInputError);
   assert.throws(() => validateProcessIdentifier(''), InvalidInputError);

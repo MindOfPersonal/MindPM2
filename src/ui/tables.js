@@ -1,4 +1,4 @@
-import { theme, statusBadge, percent } from './colors.js';
+import { theme, statusBadge, percent, ICONS } from './colors.js';
 import { formatBytes } from '../system/memory.js';
 import { visibleWidth, padLeft, padRight, stripAnsi } from './screen.js';
 import { t } from '../i18n/index.js';
@@ -36,21 +36,24 @@ export function renderTable({ headers, rows, aligns = [], gap = 2, indent = 2 })
   const align = (value, index) =>
     aligns[index] === 'right' ? padLeft(value ?? '', widths[index]) : padRight(value ?? '', widths[index]);
 
+  const contentWidth = widths.reduce((sum, width) => sum + width, 0) + gap * (headers.length - 1);
+  const pad = ' '.repeat(indent);
   const headerLine = headers.map((header, index) => theme.muted(align(header, index))).join(' '.repeat(gap));
-  const dividerLine = theme.dim(widths.map((width) => '─'.repeat(width)).join(' '.repeat(gap)));
+  const dividerLine = theme.dim('─'.repeat(Math.max(0, contentWidth)));
   const bodyLines = rows.map(
-    (row) => `${' '.repeat(indent)}${row.map((cell, index) => align(cell, index)).join(' '.repeat(gap))}`
+    (row) => `${pad}${row.map((cell, index) => align(cell, index)).join(' '.repeat(gap))}`
   );
 
-  return [
-    `${' '.repeat(indent)}${headerLine}`,
-    `${' '.repeat(indent)}${dividerLine}`,
-    ...bodyLines,
-  ].join('\n');
+  return [`${pad}${headerLine}`, `${pad}${dividerLine}`, ...bodyLines].join('\n');
+}
+
+function nameColumnWidth(processes) {
+  const longest = processes.reduce((max, proc) => Math.max(max, visibleWidth(proc.name)), 0);
+  return Math.min(30, Math.max(14, longest));
 }
 
 export function processTable(processes, options = {}) {
-  const nameWidth = options.nameWidth ?? 26;
+  const nameWidth = options.nameWidth ?? nameColumnWidth(processes);
   const headers = [
     t('table.id'),
     t('table.name'),
@@ -62,20 +65,21 @@ export function processTable(processes, options = {}) {
     t('table.uptime'),
     t('table.pid'),
   ].map((label) => label.toUpperCase());
+
   const rows = processes.map((proc) => [
-    String(proc.id),
-    truncate(proc.name, nameWidth),
-    proc.mode,
+    theme.muted(String(proc.id).padStart(2)),
+    theme.text(truncate(proc.name, nameWidth)),
+    theme.dim(proc.mode),
     statusBadge(proc.status),
     percent(proc.cpu, { decimals: 1 }),
-    formatBytes(proc.memory),
-    String(proc.restartTime),
-    formatDuration(proc.uptime),
-    proc.pid ? String(proc.pid) : '-',
+    theme.text(formatBytes(proc.memory)),
+    proc.restartTime > 0 ? theme.warning(String(proc.restartTime)) : theme.dim('0'),
+    theme.muted(formatDuration(proc.uptime)),
+    proc.pid ? theme.text(String(proc.pid)) : theme.dim('-'),
   ]);
 
   if (processes.length === 0 && !options.hideEmpty) {
-    return theme.dim(`  ${t('list.empty')}`);
+    return `  ${theme.dim(`${ICONS.bullet} ${t('list.empty')}`)}`;
   }
 
   return renderTable({
@@ -91,16 +95,11 @@ export function keyValue(rows, options = {}) {
   return rows
     .map(([label, value]) => {
       if (label === '') return '';
-      return `  ${theme.muted(padRight(String(label), labelWidth))}  ${value ?? '-'}`;
+      return `  ${theme.muted(padRight(String(label), labelWidth))}  ${value ?? theme.dim('-')}`;
     })
     .join('\n');
 }
 
 export function twoColumnTable(pairs) {
-  return pairs
-    .map(([key, value]) => {
-      if (key === '') return '';
-      return `  ${theme.muted(String(key).padEnd(20))}  ${value ?? '-'}`;
-    })
-    .join('\n');
+  return keyValue(pairs, { labelWidth: 20 });
 }

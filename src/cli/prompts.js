@@ -6,9 +6,37 @@ import {
   password,
   number,
 } from '@inquirer/prompts';
+import { theme, ICONS } from '../ui/colors.js';
 
 export const BACK = Symbol('back');
 export const ABORT = Symbol('abort');
+
+function promptTheme() {
+  return {
+    prefix: {
+      idle: theme.primary(ICONS.brand),
+      done: theme.success(ICONS.ok),
+    },
+    icon: {
+      cursor: theme.primary(ICONS.pointer),
+    },
+    style: {
+      message: (text) => theme.title(text),
+      answer: (text) => theme.success(text),
+      highlight: (text) => theme.primaryBold(text),
+      disabled: (text) => theme.dim(`- ${text}`),
+      description: (text) => theme.muted(text),
+      error: (text) => theme.error(`> ${text}`),
+      defaultAnswer: (text) => theme.dim(`(${text})`),
+      keysHelpTip: (keys) =>
+        keys
+          .map(([key, action]) => `${theme.accent(key)} ${theme.dim(action)}`)
+          .join(theme.dim(` ${ICONS.bullet} `)),
+    },
+    helpMode: 'always',
+    indexMode: 'hidden',
+  };
+}
 
 function normalizeError(error) {
   if (error?.name === 'ExitPromptError' || error?.name === 'AbortPromptError') {
@@ -25,6 +53,7 @@ export async function selectPrompt(message, choices, options = {}) {
       choices,
       pageSize: options.pageSize ?? 15,
       loop: options.loop ?? true,
+      theme: promptTheme(),
     });
   } catch (error) {
     return normalizeError(error);
@@ -38,6 +67,7 @@ export async function checkboxPrompt(message, choices, options = {}) {
       choices,
       pageSize: options.pageSize ?? 15,
       required: options.required ?? false,
+      theme: promptTheme(),
     });
   } catch (error) {
     return normalizeError(error);
@@ -51,6 +81,7 @@ export async function inputPrompt(message, options = {}) {
       default: options.default,
       validate: options.validate,
       transformer: options.transformer,
+      theme: promptTheme(),
     });
   } catch (error) {
     return normalizeError(error);
@@ -62,6 +93,7 @@ export async function confirmPrompt(message, options = {}) {
     return await confirm({
       message,
       default: options.default ?? false,
+      theme: promptTheme(),
     });
   } catch (error) {
     return normalizeError(error);
@@ -76,6 +108,7 @@ export async function numberPrompt(message, options = {}) {
       min: options.min,
       max: options.max,
       required: options.required,
+      theme: promptTheme(),
     });
   } catch (error) {
     return normalizeError(error);
@@ -84,7 +117,7 @@ export async function numberPrompt(message, options = {}) {
 
 export async function passwordPrompt(message) {
   try {
-    return await password({ message, mask: '*' });
+    return await password({ message, mask: '*', theme: promptTheme() });
   } catch (error) {
     return normalizeError(error);
   }

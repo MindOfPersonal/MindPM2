@@ -1,7 +1,7 @@
 import { listProcesses } from '../../pm2/processes.js';
 import { save } from '../../pm2/startup.js';
 import { withSpinner } from '../../ui/spinner.js';
-import { printSuccess } from '../output.js';
+import { printJson } from '../output.js';
 import { confirmDangerous } from './helpers.js';
 import { theme } from '../../ui/colors.js';
 import { t } from '../../i18n/index.js';
@@ -13,8 +13,9 @@ export async function runSave(options = {}) {
 
   if (options.json) {
     await save();
-    printSuccess(t('save.savedCount', { count: processes.length }));
-    return { saved: processes.length };
+    const result = { saved: processes.length, online, other };
+    printJson(result);
+    return result;
   }
 
   process.stdout.write(`${theme.muted(t('save.current'))}\n`);

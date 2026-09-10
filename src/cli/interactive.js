@@ -1,22 +1,26 @@
 import readline from 'node:readline/promises';
 import { spawn } from 'node:child_process';
+import { Separator } from '@inquirer/prompts';
 import { showLogo } from '../ui/logo.js';
 import { theme, statusBadge } from '../ui/colors.js';
 import { dashboardBox, panel } from '../ui/boxes.js';
 import { processTable, formatDuration, truncate } from '../ui/tables.js';
-import { header, dotSeparator } from '../ui/screen.js';
+import { header, dotSeparator, center, statusBar } from '../ui/screen.js';
 import { selectPrompt, inputPrompt, confirmPrompt, BACK } from './prompts.js';
 import {
   mainMenuChoices,
   processActionChoices,
+  bulkActionChoices,
   logsMenuChoices,
   saveRestoreChoices,
   startupChoices,
   ecosystemChoices,
   settingsChoices,
+  sortChoices,
   BACK_CHOICE,
   EXIT_CHOICE,
 } from './menus.js';
+import { sortProcesses } from './commands/helpers.js';
 import { listProcesses, findProcess } from '../pm2/processes.js';
 import { isPm2Installed, isDaemonRunning, getPm2Version } from '../pm2/daemon.js';
 import { getServerInfo } from '../system/info.js';
@@ -108,6 +112,19 @@ export async function runInteractive(options = {}) {
     } else {
       screenTitle(t('menu.title'));
     }
+    const menuProcesses = await listProcesses().catch(() => []);
+    const online = menuProcesses.filter((proc) => proc.status === 'online').length;
+    const errored = menuProcesses.filter((proc) => proc.status === 'errored').length;
+    process.stdout.write(
+      `${center(
+        statusBar({
+          online,
+          errored,
+          stopped: menuProcesses.length - online - errored,
+          total: menuProcesses.length,
+        })
+      )}\n\n`
+    );
     const choice = await selectPrompt(t('menu.title'), mainMenuChoices(), { pageSize: 20 });
 
     if (isBack(choice) || choice === 'exit') break;
@@ -213,36 +230,104 @@ async function dashboardScreen(options) {
 }
 
 async function processesScreen(options) {
+  let sortBy = 'id';
+  let query = '';
   while (true) {
     clearScreen();
-    const processes = await listProcesses().catch(() => []);
+    let processes = await listProcesses().catch(() => []);
+    const total = processes.length;
+    processes = sortProcesses(processes, sortBy);
+    if (query) {
+      const needle = query.toLowerCase();
+      processes = processes.filter(
+        (proc) => proc.name.toLowerCase().includes(needle) || String(proc.id) === query
+      );
+    }
     const online = processes.filter((proc) => proc.status === 'online').length;
+
     screenTitle(
       t('screen.processes'),
       dotSeparator([
-        `${processes.length} ${t('common.total')}`,
+        `${total} ${t('common.total')}`,
         theme.success(`${online} ${t('dashboard.online')}`),
-        theme.dim(`${processes.length - online} ${t('common.other')}`),
+        theme.dim(`${t('list.sortedBy', { field: sortBy.replace(/^-/, '') })}`),
+        query ? theme.accent(`🔍 ${query}`) : null,
       ])
     );
-    process.stdout.write(`${processTable(processes)}\n\n`);
 
-    if (processes.length === 0) {
+    if (query && processes.length === 0) {
+      process.stdout.write(`${theme.warning(`⚠ ${t('list.noMatches', { query })}`)}\n\n`);
+    } else {
+      process.stdout.write(`${processTable(processes)}\n\n`);
+    }
+
+    if (total === 0) {
       await waitForEnter();
       return;
     }
 
-    const choices = processes.map((proc) => ({
-      name: `${String(proc.id).padStart(2)}  ${proc.name}  ${theme.dim(`[${proc.status}]`)}`,
-      value: proc.name,
-    }));
-    choices.push(BACK_CHOICE);
+    const choices = [
+      { name: theme.accent(`⚙ ${t('action.bulk')}`), value: '__bulk__' },
+      { name: theme.muted(`🔍 ${t('common.search')}`), value: '__search__' },
+      { name: theme.muted(`↕ ${t('common.sort')}`), value: '__sort__' },
+      new Separator(' '),
+      ...processes.map((proc) => ({
+        name: `${String(proc.id).padStart(2)}  ${proc.name}  ${theme.dim(`[${proc.status}]`)}`,
+        value: proc.name,
+      })),
+      BACK_CHOICE,
+    ];
 
     const selected = await selectPrompt(t('screen.selectProcess'), choices, { pageSize: 20 });
     if (isBack(selected)) return;
+    if (selected === '__bulk__') {
+      await bulkActionsScreen(options);
+      continue;
+    }
+    if (selected === '__search__') {
+      const term = await inputPrompt(t('list.searchPrompt'), { default: query });
+      if (isBack(term)) continue;
+      query = String(term ?? '').trim();
+      continue;
+    }
+    if (selected === '__sort__') {
+      const chosen = await selectPrompt(t('list.sortBy'), sortChoices());
+      if (!isBack(chosen)) sortBy = chosen;
+      continue;
+    }
 
     await processActionsScreen(selected, options);
   }
+}
+
+async function bulkActionsScreen(options) {
+  clearScreen();
+  screenTitle(t('screen.bulk'));
+  const choice = await selectPrompt(t('screen.bulk'), bulkActionChoices());
+  if (isBack(choice)) return;
+
+  await guard(async () => {
+    switch (choice) {
+      case 'start-all':
+        await runStart('all', { ...options, yes: true });
+        break;
+      case 'restart-all':
+        await runRestart('all', options);
+        break;
+      case 'reload-all':
+        await runReload('all', options);
+        break;
+      case 'stop-all':
+        await runStop('all', options);
+        break;
+      case 'delete-all':
+        await runDelete('all', options);
+        break;
+      default:
+        break;
+    }
+  });
+  await waitForEnter();
 }
 
 async function processActionsScreen(identifier, options) {
@@ -290,7 +375,7 @@ async function processActionsScreen(identifier, options) {
           break;
         case 'logs':
           clearScreen();
-          await runLogs(proc.name, { lines: 50 });
+          await runLogs(proc.name, {});
           await waitForEnter();
           break;
         case 'start':
@@ -532,7 +617,7 @@ async function logsScreen(options) {
       if (isBack(name)) continue;
       clearScreen();
       screenTitle(t('screen.logs'), name);
-      await guard(() => runLogs(name, { lines: 50 }));
+      await guard(() => runLogs(name, {}));
       await waitForEnter();
       continue;
     }
@@ -557,13 +642,13 @@ async function logsScreen(options) {
     await guard(async () => {
       switch (choice) {
         case 'all':
-          await runLogs(undefined, { lines: 50 });
+          await runLogs(undefined, {});
           break;
         case 'errors':
-          await runLogs(undefined, { lines: 50, err: true });
+          await runLogs(undefined, { err: true });
           break;
         case 'output':
-          await runLogs(undefined, { lines: 50, out: true });
+          await runLogs(undefined, { out: true });
           break;
         case 'clear':
           await runLogs(undefined, { clear: true });
